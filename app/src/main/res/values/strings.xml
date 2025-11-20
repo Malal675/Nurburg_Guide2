@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Nurburg_Guide</string>
+    <!-- Baustein 2.2: Navigation-Texte -->
+    <string name="nav_home">Home</string>
+    <string name="nav_track_status">Trackstatus</string>
+    <string name="nav_community">Community</string>
+    <string name="nav_calendar">Kalender</string>
+
+</resources>
+
