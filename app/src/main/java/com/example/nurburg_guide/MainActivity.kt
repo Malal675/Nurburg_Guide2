@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     MainNavHost(
                         modifier = Modifier.padding(innerPadding),
-                        selectedItem = selectedItem
+                        selectedItem = selectedItem //test
                     )
                 }
             }
