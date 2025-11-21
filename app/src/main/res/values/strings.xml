@@ -5,6 +5,7 @@
     <string name="nav_track_status">Trackstatus</string>
     <string name="nav_community">Community</string>
     <string name="nav_calendar">Kalender</string>
+    <string name="nav_explore">Explore</string>
 
 </resources>
 

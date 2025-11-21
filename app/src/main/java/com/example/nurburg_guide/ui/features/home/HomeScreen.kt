@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nurburg_guide.ui.features.weather.interpretWeatherCode
+import com.example.nurburg_guide.ui.theme.AccentGreen
 
 @Composable
 fun HomeScreen(
@@ -24,7 +25,6 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            // HIER: mehr Abstand nach oben, damit die Karte mittiger sitzt
             .padding(start = 16.dp, end = 16.dp, top = 56.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -47,16 +47,6 @@ fun HomeScreen(
     }
 }
 
-/**
- * Wetterkarte mit:
- *  - Titel "Wetter am Ring"
- *  - Zeile: Zuletzt aktualisiert + "Aktualisieren"
- *  - Statuszeile mit Emoji
- *  - Detailtext
- *  - Temperaturzeile
- *  - Regen / Wind
- *  - Quelle
- */
 @Composable
 fun WeatherHeaderCard(
     uiState: WeatherUiState,
@@ -73,14 +63,14 @@ fun WeatherHeaderCard(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Titel
+            // Titel – jetzt in Akzent-Grün
             Text(
                 text = "Wetter am Ring",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = AccentGreen
             )
 
-            // Zeile: Zuletzt aktualisiert + Refresh
             val lastUpdatedText = uiState.lastUpdated?.let { "Zuletzt aktualisiert: $it" }
                 ?: "Noch nicht aktualisiert"
 
@@ -99,7 +89,7 @@ fun WeatherHeaderCard(
                 Text(
                     text = if (uiState.isLoading) "Aktualisiere…" else "Aktualisieren",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = AccentGreen,
                     modifier = Modifier.clickable(
                         enabled = !uiState.isLoading,
                         interactionSource = interactionSource,
@@ -133,33 +123,28 @@ fun WeatherHeaderCard(
                     val rainText = uiState.precipitationMm?.let { String.format("%.1f mm", it) } ?: "–"
                     val windText = uiState.windSpeedKmh?.let { String.format("%.1f km/h", it) } ?: "–"
 
-                    // Statuszeile mit Emoji
                     Text(
                         text = "${desc.emoji} ${desc.short}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold
                     )
 
-                    // Detailbeschreibung
                     Text(
                         text = desc.detail,
                         style = MaterialTheme.typography.bodySmall
                     )
 
-                    // Temperatur
                     Text(
                         text = "Temperatur aktuell: $tempText",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
 
-                    // Regen / Wind
                     Text(
                         text = "Regen: $rainText   ·   Wind: $windText",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
-                    // Quelle
                     Text(
                         text = "Quelle: Open-Meteo",
                         style = MaterialTheme.typography.labelSmall,

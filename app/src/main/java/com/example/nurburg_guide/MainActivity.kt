@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -29,13 +30,16 @@ class MainActivity : ComponentActivity() {
             var isDarkTheme by remember { mutableStateOf(true) }
 
             NurburgGuideTheme(darkTheme = isDarkTheme) {
-                var selectedItem by remember { mutableStateOf(BottomNavItem.Home) }
+
+                // Start-Tab: Explore
+                var selectedItem by remember { mutableStateOf(BottomNavItem.Explore) }
 
                 Scaffold(
                     topBar = {
                         CenterAlignedTopAppBar(
                             title = { Text(text = "Nurburg Guide") },
                             actions = {
+                                // Theme-Toggle
                                 IconButton(onClick = { isDarkTheme = !isDarkTheme }) {
                                     Icon(
                                         imageVector = if (isDarkTheme)
@@ -43,6 +47,18 @@ class MainActivity : ComponentActivity() {
                                         else
                                             Icons.Filled.DarkMode,
                                         contentDescription = "Theme wechseln"
+                                    )
+                                }
+
+                                // Avatar-Icon (Account / Einstellungen – später)
+                                IconButton(
+                                    onClick = {
+                                        // TODO: Später Account-/Einstellungs-Screen öffnen
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Person,
+                                        contentDescription = "Account & Einstellungen"
                                     )
                                 }
                             }
@@ -57,7 +73,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     MainNavHost(
                         modifier = Modifier.padding(innerPadding),
-                        selectedItem = selectedItem //test
+                        selectedItem = selectedItem
                     )
                 }
             }

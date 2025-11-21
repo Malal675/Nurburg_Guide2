@@ -2,8 +2,6 @@ package com.example.nurburg_guide.ui.navigation
 
 // Baustein 3.5: MainNavHost – einfacher Switch je nach Tab
 
-
-
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.example.nurburg_guide.ui.features.calendar.CalendarScreen
@@ -17,7 +15,7 @@ fun MainNavHost(
     selectedItem: BottomNavItem
 ) {
     when (selectedItem) {
-        BottomNavItem.Home -> HomeScreen()
+        BottomNavItem.Explore -> HomeScreen()
         BottomNavItem.TrackStatus -> TrackStatusScreen()
         BottomNavItem.Community -> CommunityScreen()
         BottomNavItem.Calendar -> CalendarScreen()
