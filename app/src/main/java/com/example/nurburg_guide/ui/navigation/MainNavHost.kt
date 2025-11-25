@@ -8,6 +8,7 @@ import com.example.nurburg_guide.ui.features.calendar.CalendarScreen
 import com.example.nurburg_guide.ui.features.community.CommunityScreen
 import com.example.nurburg_guide.ui.features.home.HomeScreen
 import com.example.nurburg_guide.ui.features.trackstatus.TrackStatusScreen
+import com.example.nurburg_guide.ui.features.map.MapScreen
 
 @Composable
 fun MainNavHost(
@@ -19,5 +20,6 @@ fun MainNavHost(
         BottomNavItem.TrackStatus -> TrackStatusScreen()
         BottomNavItem.Community -> CommunityScreen()
         BottomNavItem.Calendar -> CalendarScreen()
+        BottomNavItem.Map -> MapScreen()
     }
 }
