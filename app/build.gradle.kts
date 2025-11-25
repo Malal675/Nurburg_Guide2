@@ -63,9 +63,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.maps.android:maps-compose:5.0.0")
 
-// Core auf eine kompatible, moderne Version setzen (aber NICHT 1.17.0)
+    // Core auf eine kompatible, moderne Version setzen (aber NICHT 1.17.0)
     implementation("androidx.core:core-ktx:1.16.0")
-
 
     // --- Netzwerk / Wetter ---
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
@@ -83,5 +82,3 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 }
-
-

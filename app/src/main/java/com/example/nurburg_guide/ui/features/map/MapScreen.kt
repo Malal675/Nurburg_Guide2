@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.FloatingActionButton
@@ -81,8 +82,9 @@ fun MapScreen() {
             },
             containerColor = MaterialTheme.colorScheme.primary,
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
+                .align(Alignment.BottomEnd)  // Button bleibt unten rechts
+                .padding(120.dp)  // Padding nach oben
+                .offset(x = 105.dp)  // Button weiter nach rechts verschieben
         ) {
             Icon(
                 imageVector = Icons.Filled.MyLocation,
