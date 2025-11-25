@@ -1,3 +1,12 @@
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -14,6 +23,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        val mapApiKey = localProperties.getProperty("MAPS_API_KEY") ?: ""
+        manifestPlaceholders["MAPS_API_KEY"] = mapApiKey
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -50,6 +61,11 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.maps.android:maps-compose:5.0.0")
+
+// Core auf eine kompatible, moderne Version setzen (aber NICHT 1.17.0)
+    implementation("androidx.core:core-ktx:1.16.0")
+
 
     // --- Netzwerk / Wetter ---
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
