@@ -15,6 +15,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.nurburg_guide.ui.features.weather.interpretWeatherCode
 import com.example.nurburg_guide.ui.theme.AccentGreen
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 
 @Composable
 fun HomeScreen(
@@ -25,8 +29,8 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         WeatherHeaderCard(
             uiState = weatherState,
@@ -60,46 +64,51 @@ fun WeatherHeaderCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(
+                    start = 16.dp,
+                    end   = 16.dp,
+                    top   = 0.dp,   // ⬅️ Abstand oben deutlich kleiner
+                    bottom = 10.dp  // unten bleibt wie vorher
+                ),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Titel – jetzt in Akzent-Grün
-            Text(
-                text = "Wetter am Ring",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = AccentGreen
-            )
-
-            val lastUpdatedText = uiState.lastUpdated?.let { "Zuletzt aktualisiert: $it" }
-                ?: "Noch nicht aktualisiert"
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = lastUpdatedText,
-                    style = MaterialTheme.typography.labelSmall
+                    text = "Wetter am Ring",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentGreen
                 )
 
-                val interactionSource = remember { MutableInteractionSource() }
-
-                Text(
-                    text = if (uiState.isLoading) "Aktualisiere…" else "Aktualisieren",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = AccentGreen,
-                    modifier = Modifier.clickable(
-                        enabled = !uiState.isLoading,
-                        interactionSource = interactionSource,
-                        indication = null
-                    ) {
-                        onRefresh()
-                    }
-                )
+                IconButton(
+                    onClick = onRefresh,
+                    enabled = !uiState.isLoading
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Refresh,
+                        contentDescription = "Wetter aktualisieren",
+                        tint = if (uiState.isLoading) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            AccentGreen
+                        }
+                    )
+                }
             }
 
+            val lastUpdatedText = uiState.lastUpdated?.let { "Zuletzt aktualisiert: $it" }
+                ?: "Noch nicht aktualisiert"
+
+            Text(
+                text = lastUpdatedText,
+                style = MaterialTheme.typography.labelSmall
+            )
+
+            // ⬇️ Rest deines when-Blocks bleibt unverändert
             when {
                 uiState.isLoading -> {
                     Text(
