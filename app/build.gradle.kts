@@ -100,7 +100,8 @@ dependencies {
     // Core
     implementation("androidx.core:core-ktx:1.16.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
-
+    //
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
     // --- Netzwerk / Wetter ---
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
