@@ -1,12 +1,11 @@
-package com.example.nurburg_guide.ui.features.map   // ⬅️ DAS ist wichtig
+package com.example.nurburg_guide.ui.features.map
 
+// Android / System
 import android.annotation.SuppressLint
 import android.location.Location
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.Row
+
+// Compose UI
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.FloatingActionButton
@@ -17,17 +16,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+
+// Google Play Services (Fused Location Provider)
 import com.google.android.gms.location.LocationListener
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+
+// Google Maps (classic)
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+
+// Google Maps Compose
 import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+
+// Maplocations
+import com.example.nurburg_guide.ui.features.map.data.AllLocations
+import com.example.nurburg_guide.ui.features.map.model.GuideLocation
+
+// Coroutines
 import kotlinx.coroutines.launch
 
 @SuppressLint("MissingPermission")
@@ -43,58 +55,84 @@ fun MapScreen() {
     // Startposition: Nürburgring
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
-            LatLng(50.3350, 6.9470),
-            13f
+            LatLng(50.36499, 6.97163),
+            12.5f
         )
     }
 
-    val locationRequest = LocationRequest.Builder(
-        Priority.PRIORITY_HIGH_ACCURACY,
-        5000L                    // Intervall in ms
-    ).setMinUpdateIntervalMillis(2000L)  // früher: fastestInterval
-        .build()
+    var selectedLocation by remember { mutableStateOf<GuideLocation?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
-    // LocationListener, der Updates in userLocation schreibt
-    val locationListener = rememberUpdatedState(object : LocationListener {
-        override fun onLocationChanged(location: Location) {
-            userLocation = LatLng(location.latitude, location.longitude)
-        }
-    })
-
-    // fortlaufende Updates
-    LaunchedEffect(Unit) {
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationListener.value,
-            null
+    // Location-Request-Konfiguration
+    val locationRequest = remember {
+        LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            5_000L            // Intervall in ms
         )
+            .setMinUpdateIntervalMillis(2_000L)
+            .build()
     }
 
-    // einmaliger letzter Standort
-    LaunchedEffect(Unit) {
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            if (location != null) {
+    // Listener, der Updates in userLocation schreibt
+    val locationListener = remember {
+        object : LocationListener {
+            override fun onLocationChanged(location: Location) {
                 userLocation = LatLng(location.latitude, location.longitude)
             }
         }
     }
 
-    val coroutineScope = rememberCoroutineScope()
+    // fortlaufende Updates + einmaliger letzter Standort
+    LaunchedEffect(Unit) {
+        try {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationListener,
+                null
+            )
+
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    userLocation = LatLng(location.latitude, location.longitude)
+                }
+            }
+        } catch (se: SecurityException) {
+            // Falls noch keine Location-Permission erteilt wurde:
+            // wir ignorieren das erstmal, Map funktioniert trotzdem.
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
+        // ✅ Nur EINE GoogleMap mit DIESEM cameraPositionState
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(isMyLocationEnabled = true),
-            uiSettings = MapUiSettings(myLocationButtonEnabled = false)
-        )
+            uiSettings = MapUiSettings(
+                myLocationButtonEnabled = false    // wir haben unseren eigenen Button
+            )
+        ) {
+            // Alle Locations als Marker
+            AllLocations.all.forEach { location ->
+                Marker(
+                    state = MarkerState(
+                        position = LatLng(location.latitude, location.longitude)
+                    ),
+                    title = location.name,
+                    onClick = {
+                        selectedLocation = location
+                        false
+                    }
+                )
+            }
+        }
 
+        // FloatingActionButton zum auf Nutzerposition zentrieren
         Row(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
-                .offset(x = (-40).dp),   // ⬅️ HIER! Abstand vom Zoom-Control
+                .offset(x = (-40).dp),   // Abstand von den Zoom-Controls
             verticalAlignment = Alignment.CenterVertically
         ) {
             FloatingActionButton(
@@ -116,5 +154,7 @@ fun MapScreen() {
                 )
             }
         }
+
+        // TODO: Hier können wir später noch eine Card für selectedLocation unten einblenden
     }
 }
