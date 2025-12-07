@@ -4,16 +4,28 @@ package com.example.nurburg_guide.ui.features.map
 import android.annotation.SuppressLint
 import android.location.Location
 
-// Compose UI
+// Compose Foundation
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+
+// Icons / Material3
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+
+// Compose Runtime / UI
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
@@ -38,6 +50,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 // Maplocations
 import com.example.nurburg_guide.ui.features.map.data.AllLocations
 import com.example.nurburg_guide.ui.features.map.model.GuideLocation
+import com.example.nurburg_guide.ui.features.map.model.LocationCategory
 
 // Coroutines
 import kotlinx.coroutines.launch
@@ -63,17 +76,27 @@ fun MapScreen() {
     var selectedLocation by remember { mutableStateOf<GuideLocation?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
+    // ---------- FILTER-STATE ----------
+    var filterPanelOpen by remember { mutableStateOf(false) }
+
+    var selectedCategories by remember {
+        mutableStateOf(LocationCategory.values().toSet())
+    }
+
+    // gefilterte Locations – ganz simpel
+    val locationsToShow = AllLocations.all.filter { it.category in selectedCategories }
+    // ----------------------------------
+
     // Location-Request-Konfiguration
     val locationRequest = remember {
         LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
-            5_000L            // Intervall in ms
+            5_000L
         )
             .setMinUpdateIntervalMillis(2_000L)
             .build()
     }
 
-    // Listener, der Updates in userLocation schreibt
     val locationListener = remember {
         object : LocationListener {
             override fun onLocationChanged(location: Location) {
@@ -82,7 +105,6 @@ fun MapScreen() {
         }
     }
 
-    // fortlaufende Updates + einmaliger letzter Standort
     LaunchedEffect(Unit) {
         try {
             fusedLocationClient.requestLocationUpdates(
@@ -96,24 +118,22 @@ fun MapScreen() {
                     userLocation = LatLng(location.latitude, location.longitude)
                 }
             }
-        } catch (se: SecurityException) {
-            // Falls noch keine Location-Permission erteilt wurde:
-            // wir ignorieren das erstmal, Map funktioniert trotzdem.
+        } catch (_: SecurityException) {
+            // Map läuft trotzdem, nur ohne MyLocation
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // ✅ Nur EINE GoogleMap mit DIESEM cameraPositionState
+        // MAP
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             uiSettings = MapUiSettings(
-                myLocationButtonEnabled = false    // wir haben unseren eigenen Button
+                myLocationButtonEnabled = false
             )
         ) {
-            // Alle Locations als Marker
-            AllLocations.all.forEach { location ->
+            locationsToShow.forEach { location ->
                 Marker(
                     state = MarkerState(
                         position = LatLng(location.latitude, location.longitude)
@@ -127,12 +147,103 @@ fun MapScreen() {
             }
         }
 
-        // FloatingActionButton zum auf Nutzerposition zentrieren
+        // RECHTE SEITE: Panel + Pfeil in einer Row
+        Row(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (filterPanelOpen) {
+                Surface(
+                    shape = RoundedCornerShape(
+                        topStart = 16.dp,
+                        bottomStart = 16.dp
+                    ),
+                    tonalElevation = 4.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .width(220.dp)
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = "Filter",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        LocationCategory.values().forEach { category ->
+                            val checked = category in selectedCategories
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Checkbox(
+                                    checked = checked,
+                                    onCheckedChange = {
+                                        selectedCategories =
+                                            toggleCategory(selectedCategories, category)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = category.displayName(),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // "Alle ein/aus" tappbar ohne clickable()
+                        Box(
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .pointerInput(Unit) {
+                                    detectTapGestures {
+                                        selectedCategories =
+                                            if (selectedCategories.size == LocationCategory.values().size)
+                                                emptySet()
+                                            else
+                                                LocationCategory.values().toSet()
+                                    }
+                                }
+                        ) {
+                            Text(
+                                text = "Alle ein/ausblenden",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+            // Pfeil-FAB immer rechts außen
+            FloatingActionButton(
+                onClick = { filterPanelOpen = !filterPanelOpen },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(
+                    imageVector = if (filterPanelOpen) Icons.Filled.ChevronRight else Icons.Filled.ChevronLeft,
+                    contentDescription = if (filterPanelOpen) "Filter schließen" else "Filter öffnen"
+                )
+            }
+        }
+
+        // MyLocation-Button unten rechts
         Row(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
-                .offset(x = (-40).dp),   // Abstand von den Zoom-Controls
+                .offset(x = (-40).dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             FloatingActionButton(
@@ -155,6 +266,26 @@ fun MapScreen() {
             }
         }
 
-        // TODO: Hier können wir später noch eine Card für selectedLocation unten einblenden
+        // TODO: selectedLocation-Card später
     }
+}
+
+// -------- Hilfsfunktionen für Filter --------
+
+private fun toggleCategory(
+    current: Set<LocationCategory>,
+    category: LocationCategory
+): Set<LocationCategory> =
+    if (category in current) current - category else current + category
+
+private fun LocationCategory.displayName(): String = when (this) {
+    LocationCategory.GASTRONOMIE      -> "Gastronomie"
+    LocationCategory.PARKPLATZ        -> "Parkplätze"
+    LocationCategory.NURBURGRING      -> "Nürburgring"
+    LocationCategory.RACETAXI         -> "Racetaxi"
+    LocationCategory.AUTOVERMIETUNG   -> "Autovermietung"
+    LocationCategory.TANKSTELLE       -> "Tankstellen"
+    LocationCategory.KULTUR           -> "Kultur"
+    LocationCategory.STRECKENQUERUNG  -> "Streckenquerungen"
+    LocationCategory.LADESAEULE       -> "Ladesäulen"
 }
