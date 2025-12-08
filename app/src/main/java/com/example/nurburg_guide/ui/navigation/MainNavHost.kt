@@ -5,7 +5,7 @@ package com.example.nurburg_guide.ui.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.example.nurburg_guide.ui.features.calendar.ui.CalendarScreen
+import com.example.nurburg_guide.ui.features.calendar.CalendarScreen
 import com.example.nurburg_guide.ui.features.community.CommunityScreen
 import com.example.nurburg_guide.ui.features.home.HomeScreen
 import com.example.nurburg_guide.ui.features.trackstatus.TrackStatusScreen

@@ -81,7 +81,8 @@ repositories {
 dependencies {
     // Kotlin Stdlib explizit setzen
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.20")
-
+    // Bilder laden in Compose (für News-Bilder)
+    implementation("io.coil-kt:coil-compose:2.5.0")
     // --- Compose / UI ---
     implementation(platform("androidx.compose:compose-bom:2023.06.00"))
     implementation("androidx.compose.material3:material3")
