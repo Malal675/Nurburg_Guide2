@@ -25,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -46,27 +45,25 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.example.nurburg_guide.ui.features.map.TrackSectorsOverlay
+
+// Sektor-Overlay
 import com.example.nurburg_guide.ui.features.trackstatus.SectorState
-import com.example.nurburg_guide.ui.features.trackstatus.SectorStatus
+import com.example.nurburg_guide.ui.features.map.TrackSectorsOverlay
 
 // Maplocations
 import com.example.nurburg_guide.ui.features.map.data.AllLocations
 import com.example.nurburg_guide.ui.features.map.model.GuideLocation
 import com.example.nurburg_guide.ui.features.map.model.LocationCategory
 
-// Sektoren
-
-import com.example.nurburg_guide.ui.features.map.sectors.TiergartenSector
-
 // Coroutines
 import kotlinx.coroutines.launch
 
 @SuppressLint("MissingPermission")
 @Composable
-fun MapScreen() {
+fun MapScreen(
+    sectorsState: List<SectorState>          // 👈 Sektorzustände kommen von außen
+) {
     val context = LocalContext.current
     val fusedLocationClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
@@ -74,33 +71,23 @@ fun MapScreen() {
 
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
 
-    // 🔁 Startposition wieder wie früher: Nürburgring allgemein
+    // Startposition: Nürburgring allgemein (wie vorher)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
-            LatLng(50.36499, 6.97163),
-            12.5f
+            LatLng(50.365, 6.963),
+            12.65f
         )
     }
 
     var selectedLocation by remember { mutableStateOf<GuideLocation?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
-    // 👉 Nur zum Testen: Tiergarten (ID 1) ist GELB
-    // später: kommt das aus TrackStatusViewModel
-    val sectorsState: List<SectorState> = remember {
-        listOf(
-            SectorState(
-                sectorId = 1,
-                status = SectorStatus.GREEN
-            )
-        )
-    }
-
     // ---------- FILTER-STATE ----------
     var filterPanelOpen by remember { mutableStateOf(false) }
 
+// 👉 Start: keine Kategorie ausgewählt = alle Marker ausgeblendet
     var selectedCategories by remember {
-        mutableStateOf(LocationCategory.values().toSet())
+        mutableStateOf<Set<LocationCategory>>(emptySet())
     }
 
     val locationsToShow = AllLocations.all.filter { it.category in selectedCategories }
@@ -169,18 +156,33 @@ fun MapScreen() {
             }
         }
 
-        // RECHTE SEITE: Panel + Pfeil in einer Row
-        Row(
+        // UNTERE LINKE ECKE: Button bleibt unten, Panel geht nach oben auf
+        Box(
             modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .align(Alignment.BottomStart)
+                .padding(start = 16.dp, bottom = 16.dp)
         ) {
+            // Filter-Button fest unten links
+            FloatingActionButton(
+                onClick = { filterPanelOpen = !filterPanelOpen },
+                containerColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(Alignment.BottomStart)
+            ) {
+                Icon(
+                    imageVector = if (filterPanelOpen) Icons.Filled.ChevronLeft else Icons.Filled.ChevronRight,
+                    contentDescription = if (filterPanelOpen) "Filter schließen" else "Filter öffnen"
+                )
+            }
+
+            // Panel rechts daneben, ebenfalls am unteren Rand ausgerichtet
             if (filterPanelOpen) {
                 Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 56.dp),   // ca. Button-Durchmesser + Abstand
                     shape = RoundedCornerShape(
-                        topStart = 16.dp,
-                        bottomStart = 16.dp
+                        topEnd = 16.dp,
+                        bottomEnd = 16.dp
                     ),
                     tonalElevation = 4.dp,
                     color = MaterialTheme.colorScheme.surface
@@ -222,7 +224,6 @@ fun MapScreen() {
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        // "Alle ein/aus" tappbar ohne clickable()
                         Box(
                             modifier = Modifier
                                 .padding(vertical = 4.dp)
@@ -244,19 +245,6 @@ fun MapScreen() {
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-
-            // Pfeil-FAB immer rechts außen
-            FloatingActionButton(
-                onClick = { filterPanelOpen = !filterPanelOpen },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = if (filterPanelOpen) Icons.Filled.ChevronRight else Icons.Filled.ChevronLeft,
-                    contentDescription = if (filterPanelOpen) "Filter schließen" else "Filter öffnen"
-                )
             }
         }
 
