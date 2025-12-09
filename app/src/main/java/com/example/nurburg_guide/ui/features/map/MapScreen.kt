@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -45,12 +46,20 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.example.nurburg_guide.ui.features.map.TrackSectorsOverlay
+import com.example.nurburg_guide.ui.features.trackstatus.SectorState
+import com.example.nurburg_guide.ui.features.trackstatus.SectorStatus
 
 // Maplocations
 import com.example.nurburg_guide.ui.features.map.data.AllLocations
 import com.example.nurburg_guide.ui.features.map.model.GuideLocation
 import com.example.nurburg_guide.ui.features.map.model.LocationCategory
+
+// Sektoren
+
+import com.example.nurburg_guide.ui.features.map.sectors.TiergartenSector
 
 // Coroutines
 import kotlinx.coroutines.launch
@@ -65,7 +74,7 @@ fun MapScreen() {
 
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
 
-    // Startposition: Nürburgring
+    // 🔁 Startposition wieder wie früher: Nürburgring allgemein
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
             LatLng(50.36499, 6.97163),
@@ -76,6 +85,17 @@ fun MapScreen() {
     var selectedLocation by remember { mutableStateOf<GuideLocation?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
+    // 👉 Nur zum Testen: Tiergarten (ID 1) ist GELB
+    // später: kommt das aus TrackStatusViewModel
+    val sectorsState: List<SectorState> = remember {
+        listOf(
+            SectorState(
+                sectorId = 1,
+                status = SectorStatus.GREEN
+            )
+        )
+    }
+
     // ---------- FILTER-STATE ----------
     var filterPanelOpen by remember { mutableStateOf(false) }
 
@@ -83,11 +103,9 @@ fun MapScreen() {
         mutableStateOf(LocationCategory.values().toSet())
     }
 
-    // gefilterte Locations – ganz simpel
     val locationsToShow = AllLocations.all.filter { it.category in selectedCategories }
-    // ----------------------------------
 
-    // Location-Request-Konfiguration
+    // ---------- Location-Request ----------
     val locationRequest = remember {
         LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
@@ -133,6 +151,10 @@ fun MapScreen() {
                 myLocationButtonEnabled = false
             )
         ) {
+            // ✅ Sektoren-Overlay (alle Polylines + Farben)
+            TrackSectorsOverlay(sectorsState = sectorsState)
+
+            // Marker für Locations
             locationsToShow.forEach { location ->
                 Marker(
                     state = MarkerState(
