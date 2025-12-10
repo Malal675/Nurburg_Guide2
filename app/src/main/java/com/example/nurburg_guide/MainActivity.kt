@@ -4,22 +4,41 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.example.nurburg_guide.ui.features.account.AccountMenuIcon
 import com.example.nurburg_guide.ui.navigation.BottomNavBar
 import com.example.nurburg_guide.ui.navigation.BottomNavItem
@@ -38,6 +57,9 @@ class MainActivity : ComponentActivity() {
             NurburgGuideTheme(darkTheme = isDarkTheme) {
                 // Start-Tab: Explore
                 var selectedItem by remember { mutableStateOf(BottomNavItem.Explore) }
+
+                // NEU: RaceTaxi-Popup beim Start
+                var showRaceTaxiDialog by remember { mutableStateOf(true) }
 
                 // --- First-launch-Lizenz / Disclaimer ---
                 val context = LocalContext.current
@@ -87,6 +109,13 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier,
                             selectedItem = selectedItem,
                         )
+
+                        // NEU: RaceTaxi-Werbung
+                        if (showRaceTaxiDialog) {
+                            RaceTaxiPromoDialog(
+                                onClose = { showRaceTaxiDialog = false }
+                            )
+                        }
 
                         // Lizenz-Hinweis nur anzeigen, wenn nötig
                         if (showLicenseDialog) {
@@ -148,4 +177,73 @@ private fun LicenseDisclaimerDialog(
             }
         }
     )
+}
+
+/**
+ * NEU: RaceTaxi-Popup mit Bild + Button
+ */
+@Composable
+private fun RaceTaxiPromoDialog(
+    onClose: () -> Unit,
+) {
+    Dialog(onDismissRequest = onClose) {
+        Card(
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        ) {
+            Column {
+                Box {
+                    Image(
+                        painter = painterResource(id = R.drawable.racetaxi_promo),
+                        contentDescription = "RaceTaxi am Nürburgring",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Werbung schließen"
+                        )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Erlebe den Ring als Beifahrer",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "BMW M3 Competition Touring – Racetaxi-Laps mit Profi-Fahrern. " +
+                                "Perfekt, um Linien und Bremspunkte kennenzulernen.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            // TODO: später Link zur Buchungs-Seite öffnen
+                            onClose()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Zur Seite")
+                    }
+                }
+            }
+        }
+    }
 }

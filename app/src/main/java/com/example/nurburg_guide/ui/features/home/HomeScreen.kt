@@ -2,6 +2,7 @@ package com.example.nurburg_guide.ui.features.home
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -9,28 +10,40 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.nurburg_guide.R
 import com.example.nurburg_guide.ui.features.weather.interpretWeatherCode
 import com.example.nurburg_guide.ui.theme.AccentGreen
 
+// zentrale URL für Banner & Dialog
+private const val RACE_TAXI_URL =
+    "https://www.getspeed-racetaxi.de/?utm_campaign_id=1&utm_adgroupid=&utm_targetid=&utm_loc_interest_ms=1004790&utm_loc_physical_ms=9044649&utm_keyword=&gad_source=1&gad_campaignid=21125883795&gbraid=0AAAAAqcBHeYJLr1YSX8A0gWq_Vfj2Re94&gclid=CjwKCAiA0eTJBhBaEiwA-Pa-hThsLU1Fv46f7rNRCCQaave2D_7AV68ICXrewgGNMUD17Iw_j55siRoCjtwQAvD_BwE"
+
 /**
  * Explore / Home Screen:
- *  - oben Wetter-Header
+ *  - ganz oben RaceTaxi-Banner
+ *  - darunter Wetter-Header
  *  - darunter News / Highlights rund um den Ring
  */
 @Composable
@@ -40,6 +53,8 @@ fun HomeScreen(
     val weatherState = weatherViewModel.uiState
     val newsItems = remember { sampleRingNews() }
 
+    var showRaceTaxiDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -47,6 +62,12 @@ fun HomeScreen(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // Banner ganz oben
+        NlsPromoBanner(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { showRaceTaxiDialog = true },
+        )
+
         WeatherHeaderCard(
             uiState = weatherState,
             onRefresh = { weatherViewModel.refresh() },
@@ -57,6 +78,95 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth(),
         )
     }
+
+    // Popup mit "Zur Seite" -> öffnet GetSpeed-Link
+    RaceTaxiInfoDialog(
+        open = showRaceTaxiDialog,
+        onDismiss = { showRaceTaxiDialog = false },
+    )
+}
+
+/**
+ * Einfacher Banner oben auf dem Home Screen.
+ * Tap öffnet das Popup, nicht direkt den Browser.
+ */
+@Composable
+fun NlsPromoBanner(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Surface(
+        modifier = modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null, // wichtig wegen neuer clickable-API
+            ) {
+                onClick()
+            },
+        shape = MaterialTheme.shapes.large,
+        tonalElevation = 8.dp,
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.home_nls_banner),
+            contentDescription = "RaceTaxi – Werde Teil der NLS",
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 140.dp),
+            contentScale = ContentScale.Crop,
+        )
+    }
+}
+
+/**
+ * Dialog, der erscheint, wenn man den Banner antippt.
+ * "Zur Seite" öffnet den GetSpeed-RaceTaxi-Link im Browser.
+ */
+@Composable
+fun RaceTaxiInfoDialog(
+    open: Boolean,
+    onDismiss: () -> Unit,
+) {
+    if (!open) return
+
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "RaceTaxi – Werde Teil der NLS",
+                style = MaterialTheme.typography.titleLarge,
+            )
+        },
+        text = {
+            Text(
+                text = "Erlebe die Nordschleife als Beifahrer im GetSpeed RaceTaxi. " +
+                        "Über \"Zur Seite\" kommst du direkt zur Buchungsseite.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(RACE_TAXI_URL)
+                    )
+                    context.startActivity(intent)
+                    onDismiss()
+                }
+            ) {
+                Text("Zur Seite")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Später")
+            }
+        },
+    )
 }
 
 /**
@@ -78,7 +188,7 @@ fun WeatherHeaderCard(
                 .padding(
                     start = 16.dp,
                     end = 16.dp,
-                    top = 0.dp,   // oben flacher
+                    top = 0.dp,
                     bottom = 10.dp,
                 ),
             verticalArrangement = Arrangement.spacedBy(6.dp),
