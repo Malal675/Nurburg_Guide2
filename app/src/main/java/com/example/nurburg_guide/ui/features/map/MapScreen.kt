@@ -48,7 +48,7 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
 // Sektor-Overlay
-import com.example.nurburg_guide.ui.features.trackstatus.SectorState
+import com.example.nurburg_guide.data.trackstatus.SectorState
 import com.example.nurburg_guide.ui.features.map.TrackSectorsOverlay
 
 // Maplocations

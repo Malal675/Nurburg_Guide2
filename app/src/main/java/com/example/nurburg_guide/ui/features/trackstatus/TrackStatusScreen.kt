@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,16 +41,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.nurburg_guide.data.trackstatus.SectionStatus
-import com.example.nurburg_guide.data.trackstatus.TrackSectionStatus
+import com.example.nurburg_guide.data.trackstatus.NORDSCHLEIFE_SECTIONS
+import com.example.nurburg_guide.data.trackstatus.SectorState
+import com.example.nurburg_guide.data.trackstatus.SectorStatus
 import com.google.android.gms.location.LocationServices
 
 @Composable
 fun TrackStatusScreen(
     viewModel: TrackStatusViewModel = viewModel()
 ) {
-    val state = viewModel.uiState
+    // Neuer Zustand: 1..32 Sektoren
+    val sectorStates by viewModel.sectors.collectAsState()
 
+    // Alter UI-State (isTrackRed, isLoading, ...)
+    val state by viewModel.uiState.collectAsState()
     // Location + Permission
     val context = LocalContext.current
     val fusedClient = remember {
@@ -174,15 +179,16 @@ fun TrackStatusScreen(
                 Text("Lade Trackstatus …")
             }
         } else {
+            // ⬇️ neue Liste aus SectorState (1..32)
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(state.sections) { section ->
+                items(sectorStates) { sectorState ->
                     TrackSectionCard(
-                        section = section,
+                        section = sectorState, // Parametername korrigiert
                         canReportFromLocation = canReportFromLocation && hasLocationPermission,
-                        onReportYellow = { viewModel.onReportYellow(section.id) }
+                        onReportYellow = { viewModel.reportYellow(sectorState.id) }
                     )
                 }
             }
@@ -231,13 +237,25 @@ fun TrackStatusScreen(
 
 @Composable
 private fun TrackSectionCard(
-    section: TrackSectionStatus,
+    section: SectorState,
     canReportFromLocation: Boolean,
     onReportYellow: () -> Unit
 ) {
+    // passenden Anzeigenamen über ID aus den Definitionen holen
+    val displayName = run {
+        val index = section.id - 1
+        if (index in NORDSCHLEIFE_SECTIONS.indices) {
+            NORDSCHLEIFE_SECTIONS[index].displayName
+        } else {
+            "Sektor ${section.id}"
+        }
+    }
+
+    // Farben abhängig vom neuen SectorStatus
     val (statusText, statusColor, chipColor) = when (section.status) {
-        SectionStatus.GREEN -> Triple("Grün", Color(0xFF2E7D32), Color(0x332E7D32))  // sattes Grün
-        SectionStatus.YELLOW -> Triple("Gelb", Color(0xFFF9A825), Color(0x33F9A825)) // kräftiges Gelb
+        SectorStatus.GREEN -> Triple("Grün", Color(0xFF2E7D32), Color(0x332E7D32))
+        SectorStatus.YELLOW -> Triple("Gelb", Color(0xFFF9A825), Color(0x33F9A825))
+        SectorStatus.RED -> Triple("Rot", Color(0xFFC62828), Color(0x33C62828))
     }
 
     Card(
@@ -259,7 +277,7 @@ private fun TrackSectionCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = section.displayName,
+                    text = displayName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -300,7 +318,7 @@ private fun TrackSectionCard(
 
             Button(
                 onClick = onReportYellow,
-                enabled = canReportFromLocation && section.status != SectionStatus.YELLOW,
+                enabled = canReportFromLocation && section.status != SectorStatus.YELLOW,
                 modifier = Modifier
                     .height(40.dp)
                     .width(120.dp)

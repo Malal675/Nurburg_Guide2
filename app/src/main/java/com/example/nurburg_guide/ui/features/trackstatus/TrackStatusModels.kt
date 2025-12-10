@@ -27,7 +27,7 @@ data class TrackSectionStatus(
 fun initialTrackSectionStatus(): List<TrackSectionStatus> =
     NORDSCHLEIFE_SECTIONS.map { definition ->
         TrackSectionStatus(
-            id = definition.id,
+            id = definition.code,
             displayName = definition.displayName,
             status = SectionStatus.GREEN
         )

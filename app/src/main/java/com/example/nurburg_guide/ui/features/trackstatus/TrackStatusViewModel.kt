@@ -1,60 +1,147 @@
 package com.example.nurburg_guide.ui.features.trackstatus
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.nurburg_guide.data.trackstatus.InMemoryTrackStatusRepository
-import com.example.nurburg_guide.data.trackstatus.TrackSectionStatus
-import com.example.nurburg_guide.data.trackstatus.TrackStatusRepository
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
+import com.example.nurburg_guide.data.trackstatus.INITIAL_SECTOR_STATES
+import com.example.nurburg_guide.data.trackstatus.SectorState
+import com.example.nurburg_guide.data.trackstatus.SectorStatus
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
+/**
+ * UI-State für globale Infos (Rot-Banner, Loading, ...)
+ */
 data class TrackStatusUiState(
-    val isLoading: Boolean = true,
-    val sections: List<TrackSectionStatus> = emptyList(),
-    val isTrackRed: Boolean = false          // 🔴 neu
+    val isTrackRed: Boolean = false,
+    val isLoading: Boolean = false
 )
 
 class TrackStatusViewModel : ViewModel() {
 
-    private val repository: TrackStatusRepository = InMemoryTrackStatusRepository(viewModelScope)
+    // 1..32 initial GRÜN
+    private val _sectors = MutableStateFlow(INITIAL_SECTOR_STATES)
+    val sectors: StateFlow<List<SectorState>> = _sectors.asStateFlow()
 
-    var uiState by mutableStateOf(TrackStatusUiState())
-        private set
+    private val _uiState = MutableStateFlow(TrackStatusUiState())
+    val uiState: StateFlow<TrackStatusUiState> = _uiState.asStateFlow()
 
-    init {
-        observeState()
+    private fun updateSector(id: Int, transform: (SectorState) -> SectorState) {
+        _sectors.value = _sectors.value.map { sector ->
+            if (sector.id == id) transform(sector) else sector
+        }
     }
 
-    private fun observeState() {
-        viewModelScope.launch {
-            combine(
-                repository.trackSections,
-                repository.isTrackRed
-            ) { sections, isRed ->
-                TrackStatusUiState(
-                    isLoading = false,
-                    sections = sections,
-                    isTrackRed = isRed
+    /** Nutzer meldet GELB für genau einen Sektor */
+    fun reportYellow(id: Int) {
+        val now = System.currentTimeMillis()
+        val fiveMinutes = 5 * 60 * 1000L
+
+        updateSector(id) { old ->
+            if (old.status == SectorStatus.RED) {
+                old // Rot hat Priorität
+            } else {
+                old.copy(
+                    status = SectorStatus.YELLOW,
+                    yellowUntilMillis = now + fiveMinutes
                 )
-            }.collect { newState ->
-                uiState = newState
             }
         }
     }
 
-    fun onReportYellow(sectionId: String) {
-        viewModelScope.launch {
-            repository.reportYellow(sectionId)
+    /** Nutzer meldet ROT für die ganze Strecke (global) */
+    private fun reportRedGlobal() {
+        val now = System.currentTimeMillis()
+        val thirtyMinutes = 30 * 60 * 1000L
+
+        _sectors.value = _sectors.value.map { old ->
+            old.copy(
+                status = SectorStatus.RED,
+                redReportCount = old.redReportCount + 1,
+                redUntilMillis = now + thirtyMinutes,
+                yellowUntilMillis = null
+            )
+        }
+        _uiState.value = _uiState.value.copy(isTrackRed = true)
+    }
+
+    /**
+     * Wird vom Screen aufgerufen:
+     * - isRed = true  → Strecke rot melden
+     * - isRed = false → Rot aufheben
+     */
+    fun setTrackRed(isRed: Boolean) {
+        if (isRed) {
+            reportRedGlobal()
+        } else {
+            // alles zurück auf GRÜN
+            _sectors.value = _sectors.value.map { old ->
+                old.copy(
+                    status = SectorStatus.GREEN,
+                    yellowUntilMillis = null,
+                    redUntilMillis = null,
+                    redReportCount = 0
+                )
+            }
+            _uiState.value = _uiState.value.copy(isTrackRed = false)
         }
     }
 
-    // 🔴 neu: Rot setzen/aufheben
-    fun setTrackRed(enabled: Boolean) {
-        viewModelScope.launch {
-            repository.setTrackRed(enabled)
+    /** Optional: Rot für einzelnen Sektor mit 2-Meldungen-Logik */
+    fun reportRedSingleSector(id: Int) {
+        val now = System.currentTimeMillis()
+        val thirtyMinutes = 30 * 60 * 1000L
+
+        updateSector(id) { old ->
+            val newCount = old.redReportCount + 1
+            if (newCount >= 2) {
+                old.copy(
+                    status = SectorStatus.RED,
+                    redReportCount = newCount,
+                    redUntilMillis = now + thirtyMinutes,
+                    yellowUntilMillis = null
+                )
+            } else {
+                old.copy(redReportCount = newCount)
+            }
+        }
+    }
+
+    /** Timer-Logik, wenn du sie später zyklisch aufrufst */
+    fun cleanupExpiredStates() {
+        val now = System.currentTimeMillis()
+        _sectors.value = _sectors.value.map { old ->
+            var result = old
+
+            // Gelb abgelaufen?
+            val yellowUntil = result.yellowUntilMillis
+            if (result.status == SectorStatus.YELLOW &&
+                yellowUntil != null &&
+                yellowUntil <= now
+            ) {
+                result = result.copy(
+                    status = SectorStatus.GREEN,
+                    yellowUntilMillis = null
+                )
+            }
+
+            // Rot abgelaufen?
+            val redUntil = result.redUntilMillis
+            if (result.status == SectorStatus.RED &&
+                redUntil != null &&
+                redUntil <= now
+            ) {
+                result = result.copy(
+                    status = SectorStatus.GREEN,
+                    redUntilMillis = null,
+                    redReportCount = 0
+                )
+            }
+
+            result
+        }
+
+        if (_sectors.value.all { it.status == SectorStatus.GREEN }) {
+            _uiState.value = _uiState.value.copy(isTrackRed = false)
         }
     }
 }
