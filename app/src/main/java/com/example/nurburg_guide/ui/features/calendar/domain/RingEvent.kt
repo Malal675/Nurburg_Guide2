@@ -37,9 +37,7 @@ enum class TrackType {
 }
 
 /**
- * Link zur offiziellen Nürburgring-Kalenderübersicht bei Calovo.
- *
- * Dort können User die offiziellen Kalender (inkl. 2026) abonnieren.
+ * Link zur offiziellen Nürburgring-Kalenderübersicht.
  */
 const val OFFICIAL_NUERBURGRING_CALENDAR_URL: String =
     "https://nuerburgring.de/events?locale=en"

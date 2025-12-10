@@ -1,68 +1,106 @@
-package com.example.nurburg_guide.ui.features.calendar.domain
+package com.example.nurburg_guide.ui.features.community.domain
 
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 
 /**
- * Einfache InMemory-Implementation für Tests / Entwicklung.
- *
- * Erzeugt Demo-Events relativ zu [from]:
- * - Heute Abend: Touristenfahrten
- * - Morgen: Touristenfahrten tagsüber
- * - Übermorgen: Special Event
+ * Dummy-Repo mit Beispielposts.
+ * Später ersetzt du das durch Firebase / eigenes Backend.
  */
-class InMemoryRingCalendarRepository : RingCalendarRepository {
+class InMemoryCommunityRepository : CommunityRepository {
 
-    override suspend fun getEvents(
-        from: LocalDateTime,
-        to: LocalDateTime
-    ): List<RingEvent> {
-        // Auf Tagesanfang runden
-        val baseDayStart = from.truncatedTo(ChronoUnit.DAYS)
-        val day1 = baseDayStart
-        val day2 = baseDayStart.plusDays(1)
-        val day3 = baseDayStart.plusDays(2)
+    private val userBen = UserProfile(
+        id = "user-ben",
+        displayName = "Ben – TF-Junkie",
+        avatarInitials = "BE"
+    )
 
-        val demoEvents = listOf(
-            RingEvent(
-                id = "tf-${day1.toLocalDate()}-evening",
-                title = "Touristenfahrten (Abend)",
-                description = "After-Work-Laps. Zeiten ohne Gewähr.",
-                startTime = day1.withHour(17).withMinute(0),
-                endTime = day1.withHour(19).withMinute(0),
-                category = RingEventCategory.TOURISTENFAHRTEN,
-                track = TrackType.NORDSCHLEIFE,
-                sourceUrl = OFFICIAL_NUERBURGRING_CALENDAR_URL,
-                isHighlight = true
-            ),
-            RingEvent(
-                id = "tf-${day2.toLocalDate()}-day",
-                title = "Touristenfahrten (Tag)",
-                description = "Tagsüber geöffnet – perfekt für längere Sessions.",
-                startTime = day2.withHour(10).withMinute(0),
-                endTime = day2.withHour(16).withMinute(0),
-                category = RingEventCategory.TOURISTENFAHRTEN,
-                track = TrackType.NORDSCHLEIFE,
-                sourceUrl = OFFICIAL_NUERBURGRING_CALENDAR_URL,
-                isHighlight = true
-            ),
-            RingEvent(
-                id = "special-${day3.toLocalDate()}-big-event",
-                title = "Großes Event (z.B. 24h-Feeling)",
-                description = "Großes Rennwochenende – volle Hütte, Zeiten ohne Gewähr.",
-                startTime = day3.withHour(8).withMinute(0),
-                endTime = day3.withHour(22).withMinute(0),
-                category = RingEventCategory.RENNEN,
-                track = TrackType.KOMBINATION,
-                sourceUrl = OFFICIAL_NUERBURGRING_CALENDAR_URL,
-                isHighlight = true
-            )
+    private val userCaro = UserProfile(
+        id = "user-caro",
+        displayName = "Caro – Green Hell",
+        avatarInitials = "CA"
+    )
+
+    private val userAnon = UserProfile(
+        id = "user-anon",
+        displayName = "Ring Neuling",
+        avatarInitials = "RN"
+    )
+
+    private val userAcs = UserProfile(
+        id = "user-acs",
+        displayName = "AC Schnitzer M2 Tracktool",
+        avatarInitials = "M2"
+    )
+
+    override suspend fun getFeed(): List<CommunityPost> {
+        val now = LocalDateTime.now()
+
+        // Beispiel-Post mit deinem AC-Schnitzer-M2-Bild
+        val postM2 = CommunityPost(
+            id = "post-m2-acs",
+            author = userAcs,
+            createdAt = now.minusHours(5),
+            title = "AC Schnitzer BMW M2 G87 – Tracktool zum Mieten",
+            content = "Frisch entdeckt: AC Schnitzer BMW M2 G87 als Tracktool bei RSR am Ring. " +
+                    "Komplettes Aero-Paket, Cup-Bereifung, KW-Fahrwerk – perfekt zum Testen, " +
+                    "bevor man das eigene Auto umbaut.\n\n" +
+                    "Artikel: bimmertoday.de – AC Schnitzer: BMW M2 G87 als Tuning-Tracktool zum Mieten.",
+            imageUrl = "https://www.bimmertoday.de/wp-content/uploads/2024/04/AC-Schnitzer-BMW-M2-G87-Tuning-Tracktool-Miete-01.jpg",
+            likeCount = 64,
+            commentCount = 7,
+            isLikedByMe = true,
+            tag = PostTag.SPOTTING
         )
 
-        // Nur Events zurückgeben, deren Start in [from, to) liegt
-        return demoEvents.filter { event ->
-            (event.startTime.isEqual(from) || event.startTime.isAfter(from)) &&
-                    event.startTime.isBefore(to)
-        }
+        val userPost1 = CommunityPost(
+            id = "post-1",
+            author = userBen,
+            createdAt = now.minusHours(3),
+            title = "Bestes Zeitfenster für Feierabend-TF?",
+            content = "Wann fahrt ihr am liebsten nach Feierabend? Ich finde 18–19 Uhr oft am entspanntesten, " +
+                    "wenn das Wetter passt. Tipps für wenig Verkehr?",
+            likeCount = 18,
+            commentCount = 6,
+            isLikedByMe = true,
+            tag = PostTag.TOURISTENFAHRTEN
+        )
+
+        val userPost2 = CommunityPost(
+            id = "post-2",
+            author = userCaro,
+            createdAt = now.minusDays(1),
+            title = "Street/Track-Setup Laguna Coupé",
+            content = "Fahre aktuell PS4S auf 18 Zoll, Stahlflex-Leitungen und etwas mehr Sturz vorne. " +
+                    "Für TF mega stabil, aber noch daily-tauglich. Was würdet ihr als nächstes machen?",
+            likeCount = 32,
+            commentCount = 9,
+            tag = PostTag.SETUP
+        )
+
+        val userPost3 = CommunityPost(
+            id = "post-3",
+            author = userAnon,
+            createdAt = now.minusHours(10),
+            title = "Erste Runde Nordschleife – Tipps?",
+            content = "Bin nächste Woche das erste Mal am Ring. Welche Basics sollte ich auf jeden Fall beachten, " +
+                    "damit ich weder mir noch anderen im Weg stehe?",
+            likeCount = 12,
+            commentCount = 15,
+            tag = PostTag.FRAGEN
+        )
+
+        val userPost4 = CommunityPost(
+            id = "post-4",
+            author = userBen,
+            createdAt = now.minusDays(2),
+            title = "Spotting-Pics Brünnchen",
+            content = "Gestern ein paar schöne Shots am Brünnchen gemacht. Wer erkennt sein Auto?",
+            likeCount = 40,
+            commentCount = 11,
+            tag = PostTag.SPOTTING
+        )
+
+        // M2-Post nach oben, dann Rest
+        return listOf(postM2, userPost2, userPost4, userPost1, userPost3)
     }
 }

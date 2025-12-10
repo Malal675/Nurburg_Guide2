@@ -1,8 +1,5 @@
 package com.example.nurburg_guide.ui.features.calendar
 
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,7 +10,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,21 +18,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.nurburg_guide.ui.features.calendar.domain.InMemoryRingCalendarRepository
-import com.example.nurburg_guide.ui.features.calendar.domain.RingCalendarRepository
 import com.example.nurburg_guide.ui.features.calendar.domain.RingEvent
 import com.example.nurburg_guide.ui.features.calendar.domain.RingEventCategory
 import com.example.nurburg_guide.ui.features.calendar.domain.TrackType
+import com.example.nurburg_guide.ui.features.calendar.ui.OfficialCalendarSection
+import com.example.nurburg_guide.ui.features.calendar.domain.RingCalendarRepository
 import com.example.nurburg_guide.ui.theme.AccentGreen
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 
 /**
  * Kalender-Screen:
@@ -47,9 +45,10 @@ import java.util.Locale
 @Composable
 fun CalendarScreen(
     modifier: Modifier = Modifier,
-    repository: RingCalendarRepository = remember { InMemoryRingCalendarRepository() },
 ) {
-    // Wochenstart = heute
+    // Repository einmal pro Composition erzeugen
+    val repository: RingCalendarRepository = remember { InMemoryRingCalendarRepository() }
+
     val today = remember { LocalDate.now() }
     var selectedDate by remember { mutableStateOf(today) }
 
@@ -101,7 +100,6 @@ fun CalendarScreen(
 
         when {
             eventsState == null -> {
-                // Loading
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
@@ -128,7 +126,10 @@ fun CalendarScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OfficialCalendarSection()
+        // Die Version aus ui.features.calendar.ui
+        OfficialCalendarSection(
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -187,10 +188,15 @@ private fun DayChip(
     Surface(
         modifier = modifier
             .height(64.dp)
-            .clickable(onClick = onClick),
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = LocalIndication.current,
+                onClick = onClick
+            ),
         shape = MaterialTheme.shapes.medium,
         color = bgColor,
     ) {
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -214,7 +220,6 @@ private fun DayChip(
             )
 
             if (isToday && !isSelected) {
-                // kleiner "HEUTE"-Hinweis unten
                 Text(
                     text = "HEUTE",
                     style = MaterialTheme.typography.labelSmall,
@@ -237,7 +242,9 @@ private fun DayEventsSection(
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
-        val dateLabel = date.format(DateTimeFormatter.ofPattern("EEEE, dd.MM.yyyy", Locale.getDefault()))
+        val dateLabel = date.format(
+            DateTimeFormatter.ofPattern("EEEE, dd.MM.yyyy", Locale.getDefault())
+        )
         Text(
             text = "Events am $dateLabel",
             style = MaterialTheme.typography.titleMedium,
@@ -264,9 +271,6 @@ private fun DayEventsSection(
     }
 }
 
-/**
- * Einzelne Event-Karte wie vorher, nur wiederverwendet.
- */
 @Composable
 private fun EventCard(
     event: RingEvent,
@@ -340,50 +344,4 @@ private fun buildMetaLine(event: RingEvent): String {
     }
 
     return "$timePart • $track • $category"
-}
-
-/**
- * Hinweis + offizieller Kalender-Link.
- */
-@Composable
-private fun OfficialCalendarSection() {
-    val context = LocalContext.current
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        tonalElevation = 4.dp,
-        shape = MaterialTheme.shapes.medium,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                text = "Offizieller Nürburgring-Kalender",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-
-            Text(
-                text = "Für verbindliche Zeiten, kurzfristige Änderungen und das komplette Event-Programm " +
-                        "besuche immer den offiziellen Kalender der Nürburgring 1927 GmbH & Co. KG.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            TextButton(
-                onClick = {
-                    val url = "https://nuerburgring.de/events"
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                    context.startActivity(intent)
-                }
-            ) {
-                Text(text = "Offiziellen Eventkalender öffnen")
-            }
-        }
-    }
 }
