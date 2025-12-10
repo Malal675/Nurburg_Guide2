@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -28,16 +30,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -45,17 +48,29 @@ import com.example.nurburg_guide.data.trackstatus.NORDSCHLEIFE_SECTIONS
 import com.example.nurburg_guide.data.trackstatus.SectorState
 import com.example.nurburg_guide.data.trackstatus.SectorStatus
 import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.delay
 
 @Composable
 fun TrackStatusScreen(
     viewModel: TrackStatusViewModel = viewModel()
 ) {
-    // Neuer Zustand: 1..32 Sektoren
+    // 1..32 Sektoren
     val sectorStates by viewModel.sectors.collectAsState()
 
-    // Alter UI-State (isTrackRed, isLoading, ...)
+    // globaler UI-State (Rot-Banner, Loading, ...)
     val state by viewModel.uiState.collectAsState()
-    // Location + Permission
+
+    // 🔁 Globaler 1-Sekunden-Ticker für Countdown + Ablauf der Timer
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            viewModel.cleanupExpiredStates()
+            delay(1_000L)
+        }
+    }
+
+    // ---------- Location + Permission ----------
     val context = LocalContext.current
     val fusedClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
@@ -179,16 +194,16 @@ fun TrackStatusScreen(
                 Text("Lade Trackstatus …")
             }
         } else {
-            // ⬇️ neue Liste aus SectorState (1..32)
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(sectorStates) { sectorState ->
                     TrackSectionCard(
-                        section = sectorState, // Parametername korrigiert
+                        section = sectorState,
                         canReportFromLocation = canReportFromLocation && hasLocationPermission,
-                        onReportYellow = { viewModel.reportYellow(sectorState.id) }
+                        onReportYellow = { viewModel.reportYellow(sectorState.id) },
+                        currentTimeMillis = now
                     )
                 }
             }
@@ -239,7 +254,8 @@ fun TrackStatusScreen(
 private fun TrackSectionCard(
     section: SectorState,
     canReportFromLocation: Boolean,
-    onReportYellow: () -> Unit
+    onReportYellow: () -> Unit,
+    currentTimeMillis: Long
 ) {
     // passenden Anzeigenamen über ID aus den Definitionen holen
     val displayName = run {
@@ -251,11 +267,27 @@ private fun TrackSectionCard(
         }
     }
 
-    // Farben abhängig vom neuen SectorStatus
+    // Farben abhängig vom SectorStatus
     val (statusText, statusColor, chipColor) = when (section.status) {
         SectorStatus.GREEN -> Triple("Grün", Color(0xFF2E7D32), Color(0x332E7D32))
         SectorStatus.YELLOW -> Triple("Gelb", Color(0xFFF9A825), Color(0x33F9A825))
         SectorStatus.RED -> Triple("Rot", Color(0xFFC62828), Color(0x33C62828))
+    }
+
+    // ⏱️ Restzeit in Sekunden, wenn Gelb aktiv ist
+    val remainingSeconds: Int? =
+        if (section.status == SectorStatus.YELLOW && section.yellowUntilMillis != null) {
+            val diffMillis = section.yellowUntilMillis - currentTimeMillis
+            val secs = (diffMillis / 1000L).toInt()
+            if (secs > 0) secs else 0
+        } else {
+            null
+        }
+
+    val timerText: String? = remainingSeconds?.let { secs ->
+        val m = secs / 60
+        val s = secs % 60
+        String.format("%02d:%02d", m, s)
     }
 
     Card(
@@ -316,14 +348,43 @@ private fun TrackSectionCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            Button(
-                onClick = onReportYellow,
-                enabled = canReportFromLocation && section.status != SectorStatus.YELLOW,
-                modifier = Modifier
-                    .height(40.dp)
-                    .width(120.dp)
-            ) {
-                Text("Gelb melden")
+            // Rechts: entweder Gelb-Button ODER Timer-Badge
+            if (section.status != SectorStatus.YELLOW) {
+                // Schlanker, zentrierter Gelb-Button
+                Button(
+                    onClick = onReportYellow,
+                    enabled = canReportFromLocation,
+                    modifier = Modifier
+                        .height(36.dp)               // etwas dünner
+                        .widthIn(min = 80.dp),       // nicht zu breit, aber Platz für Text
+                    shape = RoundedCornerShape(18.dp)
+                ) {
+                    Text(
+                        text = "Gelb",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                // Gelb aktiv: grau hinterlegter Timer an Stelle des Buttons
+                Box(
+                    modifier = Modifier
+                        .height(36.dp)
+                        .widthIn(min = 80.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(18.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = timerText ?: "00:00",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
@@ -342,7 +403,6 @@ private fun StatusDot(color: Color) {
  * Grober Check: ist der User in der Nähe der Nordschleife?
  */
 private fun isNearNordschleife(userLat: Double, userLon: Double): Boolean {
-    // Einfahrt Nordschleife / Döttinger Höhe (ungefähr)
     val ringLat = 50.3460365
     val ringLon = 6.9652723
 
@@ -350,6 +410,5 @@ private fun isNearNordschleife(userLat: Double, userLon: Double): Boolean {
     Location.distanceBetween(userLat, userLon, ringLat, ringLon, results)
     val distanceMeters = results[0]
 
-    // z.B. 8 km Radius um die Einfahrt
     return distanceMeters <= 8_000f
 }
