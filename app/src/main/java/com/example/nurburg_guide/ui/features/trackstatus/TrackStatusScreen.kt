@@ -141,7 +141,7 @@ fun TrackStatusScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Text(
-                    text = "Strecke aktuell ROT (vermutlich gesperrt oder Unfall).",
+                    text = "Strecke aktuell ROT.",
                     modifier = Modifier.padding(12.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onError,
@@ -203,8 +203,10 @@ fun TrackStatusScreen(
                         section = sectorState,
                         canReportFromLocation = canReportFromLocation && hasLocationPermission,
                         onReportYellow = { viewModel.reportYellow(sectorState.id) },
-                        currentTimeMillis = now
-                    )
+                        currentTimeMillis = now,
+                        isTrackRed = state.isTrackRed
+                        )
+
                 }
             }
         }
@@ -255,7 +257,8 @@ private fun TrackSectionCard(
     section: SectorState,
     canReportFromLocation: Boolean,
     onReportYellow: () -> Unit,
-    currentTimeMillis: Long
+    currentTimeMillis: Long,
+    isTrackRed: Boolean
 ) {
     // passenden Anzeigenamen über ID aus den Definitionen holen
     val displayName = run {
@@ -348,43 +351,48 @@ private fun TrackSectionCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Rechts: entweder Gelb-Button ODER Timer-Badge
-            if (section.status != SectorStatus.YELLOW) {
-                // Schlanker, zentrierter Gelb-Button
-                Button(
-                    onClick = onReportYellow,
-                    enabled = canReportFromLocation,
-                    modifier = Modifier
-                        .height(36.dp)               // etwas dünner
-                        .widthIn(min = 80.dp),       // nicht zu breit, aber Platz für Text
-                    shape = RoundedCornerShape(18.dp)
-                ) {
-                    Text(
-                        text = "Gelb",
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-                    )
+            // Rechts: Gelb-Bedienung nur, wenn Strecke NICHT rot ist
+            if (!isTrackRed) {
+                // entweder Gelb-Button ODER Timer-Badge
+                if (section.status != SectorStatus.YELLOW) {
+                    Button(
+                        onClick = onReportYellow,
+                        enabled = canReportFromLocation,
+                        modifier = Modifier
+                            .height(36.dp)
+                            .widthIn(min = 80.dp),
+                        shape = RoundedCornerShape(18.dp)
+                    ) {
+                        Text(
+                            text = "Gelb",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .height(36.dp)
+                            .widthIn(min = 80.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(18.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = timerText ?: "00:00",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             } else {
-                // Gelb aktiv: grau hinterlegter Timer an Stelle des Buttons
-                Box(
-                    modifier = Modifier
-                        .height(36.dp)
-                        .widthIn(min = 80.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(18.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = timerText ?: "00:00",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                // Track ist rot -> rechts nichts anzeigen (Optional: Spacer für Layout-Stabilität)
+                Spacer(modifier = Modifier.width(80.dp))
+
             }
         }
     }
