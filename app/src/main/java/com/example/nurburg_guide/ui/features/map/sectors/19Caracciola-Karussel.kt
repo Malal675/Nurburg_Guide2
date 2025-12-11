@@ -18,5 +18,6 @@ val CaracciolaKarussellSector = Sector(
         LatLng(50.37235, 6.98691),
         LatLng(50.37270, 6.98762),
         LatLng(50.37288, 6.98833),
+        LatLng(50.37327, 6.99022),
     )
 )

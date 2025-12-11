@@ -12,6 +12,6 @@ val LaudaLinksSector = Sector(
         LatLng(50.37930, 6.95455),
         LatLng(50.37956, 6.95645),
         LatLng(50.37973, 6.95754),
-        LatLng(50.38008, 6.95829),
+        LatLng(50.38039, 6.95899),
     )
 )
