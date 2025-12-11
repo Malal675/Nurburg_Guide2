@@ -13,34 +13,44 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.ModeComment
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.composed
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.nurburg_guide.ui.features.community.domain.CommunityPost
+import com.example.nurburg_guide.ui.features.community.domain.PostCategory
 import com.example.nurburg_guide.ui.features.community.domain.PostTag
+import com.example.nurburg_guide.ui.features.community.domain.PostType
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -50,6 +60,7 @@ fun CommunityScreen(
 ) {
     val state = viewModel.uiState
     val primary = MaterialTheme.colorScheme.primary
+    var showCreateDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         // 🔹 Eigene, kleinere grüne Top-Bar
@@ -71,9 +82,7 @@ fun CommunityScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = {
-                    // TODO: später Screen/Dialog für "Neuer Beitrag"
-                }
+                onClick = { showCreateDialog = true }
             ) {
                 Text("Neuer Beitrag")
             }
@@ -110,6 +119,24 @@ fun CommunityScreen(
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        // 🔹 Filter: Typ (Post / Frage / Umfrage)
+                        item {
+                            TypeFilterRow(
+                                selected = state.activeTypes,
+                                hasActiveFilters = state.hasActiveFilters,
+                                onToggleType = { viewModel.toggleTypeFilter(it) },
+                                onClearFilters = { viewModel.clearFilters() }
+                            )
+                        }
+
+                        // 🔹 Filter: Kategorie (Ring-spezifisch)
+                        item {
+                            CategoryFilterRow(
+                                selected = state.activeCategories,
+                                onToggleCategory = { viewModel.toggleCategoryFilter(it) }
+                            )
+                        }
+
                         // Post der Woche (optional)
                         state.postOfWeek?.let { pow ->
                             item {
@@ -138,6 +165,195 @@ fun CommunityScreen(
                     }
                 }
             }
+
+            if (showCreateDialog) {
+                CreatePostDialog(
+                    onDismiss = { showCreateDialog = false },
+                    onCreate = { title, content, type, category ->
+                        viewModel.createPost(title, content, type, category)
+                        showCreateDialog = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TypeFilterRow(
+    selected: Set<PostType>,
+    hasActiveFilters: Boolean,
+    onToggleType: (PostType) -> Unit,
+    onClearFilters: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        LazyRow(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(PostType.values()) { type ->
+                FilterChip(
+                    selected = selected.contains(type),
+                    onClick = { onToggleType(type) },
+                    label = { Text(postTypeLabel(type)) }
+                )
+            }
+        }
+
+        if (hasActiveFilters) {
+            Text(
+                text = "Reset",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .clickable { onClearFilters() }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CategoryFilterRow(
+    selected: Set<PostCategory>,
+    onToggleCategory: (PostCategory) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(PostCategory.values()) { category ->
+            FilterChip(
+                selected = selected.contains(category),
+                onClick = { onToggleCategory(category) },
+                label = { Text(postCategoryLabel(category)) }
+            )
+        }
+    }
+}
+
+// 🔹 Dialog für neuen Beitrag – hier wählst du Typ & Kategorie, BEVOR du schreibst
+@Composable
+private fun CreatePostDialog(
+    onDismiss: () -> Unit,
+    onCreate: (title: String?, content: String, type: PostType, category: PostCategory) -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var content by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(PostType.NORMAL) }
+    var selectedCategory by remember { mutableStateOf(PostCategory.GENERAL) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Neuer Beitrag")
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Art des Beitrags",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(4.dp))
+                PostTypeSelector(
+                    selected = selectedType,
+                    onSelected = { selectedType = it }
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = "Kategorie",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(4.dp))
+                PostCategorySelector(
+                    selected = selectedCategory,
+                    onSelected = { selectedCategory = it }
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Titel (optional)") },
+                    singleLine = true
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    label = { Text("Dein Beitrag") },
+                    minLines = 3
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (content.isNotBlank()) {
+                        onCreate(
+                            title.ifBlank { null },
+                            content.trim(),
+                            selectedType,
+                            selectedCategory
+                        )
+                    }
+                }
+            ) {
+                Text("Posten")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
+}
+
+@Composable
+private fun PostTypeSelector(
+    selected: PostType,
+    onSelected: (PostType) -> Unit
+) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(PostType.values()) { type ->
+            FilterChip(
+                selected = type == selected,
+                onClick = { onSelected(type) },
+                label = { Text(postTypeLabel(type)) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PostCategorySelector(
+    selected: PostCategory,
+    onSelected: (PostCategory) -> Unit
+) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(PostCategory.values()) { category ->
+            FilterChip(
+                selected = category == selected,
+                onClick = { onSelected(category) },
+                label = { Text(postCategoryLabel(category)) }
+            )
         }
     }
 }
@@ -242,8 +458,14 @@ private fun PostCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${post.createdAt.format(dateFormatter)} • ${tagLabel(post.tag)}",
+                        text = post.createdAt.format(dateFormatter),
                         style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "${postTypeLabel(post.type)} • ${postCategoryLabel(post.category)} • ${tagLabel(post.tag)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -264,7 +486,7 @@ private fun PostCard(
                 style = MaterialTheme.typography.bodyMedium
             )
 
-            // 🔹 Bild zum Post (z.B. AC-Schnitzer-M2)
+            // 🔹 Bild zum Post
             post.imageUrl?.let { imageUrl ->
                 Spacer(Modifier.height(8.dp))
 
@@ -325,6 +547,24 @@ private fun tagLabel(tag: PostTag): String =
         PostTag.SPOTTING -> "Spotting"
         PostTag.FRAGEN -> "Fragen"
         PostTag.GENERAL -> "Allgemein"
+    }
+
+private fun postTypeLabel(type: PostType): String =
+    when (type) {
+        PostType.NORMAL -> "Post"
+        PostType.QUESTION -> "Frage"
+        PostType.POLL -> "Umfrage"
+    }
+
+private fun postCategoryLabel(category: PostCategory): String =
+    when (category) {
+        PostCategory.GENERAL -> "Allgemein"
+        PostCategory.TOURISTENFAHRTEN -> "Touristenfahrten"
+        PostCategory.TRACKDAYS -> "Trackdays & Rennen"
+        PostCategory.TECH_SETUP -> "Setup & Technik"
+        PostCategory.ANREISE_PARKEN -> "Anreise & Parken"
+        PostCategory.MEDIA -> "Fotos & Videos"
+        PostCategory.RIDES -> "Mitfahrgelegenheiten"
     }
 
 /**

@@ -34,5 +34,11 @@ data class CommunityPost(
     val commentCount: Int = 0,
     val isLikedByMe: Boolean = false,
     val tag: PostTag = PostTag.GENERAL,
-    val comments: List<CommunityComment> = emptyList()
+    val comments: List<CommunityComment> = emptyList(),
+
+    // NEU: Art des Beitrags (Frage / Umfrage / normaler Post)
+    val type: PostType = PostType.NORMAL,
+
+    // NEU: Nürburgring-/Renn-spezifische Kategorie
+    val category: PostCategory = PostCategory.GENERAL
 )
