@@ -9,5 +9,6 @@ enum class LocationCategory {
     TANKSTELLE,
     KULTUR,
     STRECKENQUERUNG,
-    LADESAEULE
+    LADESAEULE,
+    ZUSCHAUERSPOT
 }

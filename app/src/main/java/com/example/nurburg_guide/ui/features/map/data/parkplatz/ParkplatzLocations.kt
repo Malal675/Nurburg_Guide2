@@ -39,14 +39,6 @@ object ParkplatzLocations {
             url = null
         ),
         GuideLocation(
-            id = "park_sabine_schmitz_kurve",
-            name = "Parkplatz Sabine-Schmitz-Kurve",
-            latitude = 50.33784,
-            longitude = 6.95442,
-            category = LocationCategory.PARKPLATZ,
-            url = null
-        ),
-        GuideLocation(
             id = "park_hatzenbach",
             name = "Parkplatz Hatzenbach",
             latitude = 50.33876,
@@ -59,6 +51,30 @@ object ParkplatzLocations {
             name = "Parkplatz Adenauer Forst",
             latitude = 50.36700,
             longitude = 6.92989,
+            category = LocationCategory.PARKPLATZ,
+            url = null
+        ),
+        GuideLocation(
+            id = "park_t13",
+            name = "Parkplatz T13",
+            latitude = 50.33826,
+            longitude = 6.95024,
+            category = LocationCategory.PARKPLATZ,
+            url = null
+        ),
+        GuideLocation(
+            id = "park_quiddelbacher_hoehe",
+            name = "Parkplatz Quiddelbacher-Höhe",
+            latitude = 50.34263,
+            longitude = 6.93197,
+            category = LocationCategory.PARKPLATZ,
+            url = null
+        ),
+        GuideLocation(
+            id = "park_breidscheid",
+            name = "Parkplatz Breidscheid",
+            latitude = 50.37700,
+            longitude = 6.95066,
             category = LocationCategory.PARKPLATZ,
             url = null
         ),

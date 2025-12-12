@@ -298,4 +298,5 @@ private fun LocationCategory.displayName(): String = when (this) {
     LocationCategory.KULTUR           -> "Kultur"
     LocationCategory.STRECKENQUERUNG  -> "Streckenquerungen"
     LocationCategory.LADESAEULE       -> "Ladesäulen"
+    LocationCategory.ZUSCHAUERSPOT    -> "Zuschauerspots"
 }

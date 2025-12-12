@@ -9,6 +9,7 @@ import com.example.nurburg_guide.ui.features.map.data.parkplatz.ParkplatzLocatio
 import com.example.nurburg_guide.ui.features.map.data.querungen.QuerungenLocations
 import com.example.nurburg_guide.ui.features.map.data.tankstelle.TankstellenLocations
 import com.example.nurburg_guide.ui.features.map.data.taxi.TaxiLocations
+import com.example.nurburg_guide.ui.features.map.data.zuschauerspots.ZuschauerLocations
 
 object AllLocations {
 
@@ -20,5 +21,6 @@ object AllLocations {
                 TankstellenLocations.all +
                 TaxiLocations.all +
                 VermietungLocations.all +
-                LadesaeulenLocations.all
+                LadesaeulenLocations.all +
+                ZuschauerLocations.all
 }
