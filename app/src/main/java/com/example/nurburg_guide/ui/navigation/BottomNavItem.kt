@@ -34,13 +34,13 @@ enum class BottomNavItem(
     ),
 
     Calendar(
-        titleRes = R.string.nav_calendar,
-        icon = Icons.Filled.CalendarToday
+       titleRes = R.string.nav_calendar,
+       icon = Icons.Filled.CalendarToday
     ),
 
     // rechts in der BottomBar
-    Community(
-        titleRes = R.string.nav_community,
-        icon = Icons.Filled.People
-    )
+   // Community(
+        //titleRes = R.string.nav_community,
+       // icon = Icons.Filled.People
+  //  )
 }

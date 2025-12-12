@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.example.nurburg_guide.ui.features.calendar.CalendarScreen
-import com.example.nurburg_guide.ui.features.community.CommunityScreen
+//import com.example.nurburg_guide.ui.features.community.CommunityScreen
 import com.example.nurburg_guide.ui.features.home.HomeScreen
 import com.example.nurburg_guide.ui.features.map.MapScreen
 import com.example.nurburg_guide.ui.features.trackstatus.TrackStatusScreen
@@ -32,8 +32,8 @@ fun MainNavHost(
             BottomNavItem.TrackStatus -> TrackStatusScreen(
                 viewModel = trackStatusViewModel   // 👈 dasselbe VM!
             )
-            BottomNavItem.Community -> CommunityScreen()
-            BottomNavItem.Calendar -> CalendarScreen()
+           // BottomNavItem.Community -> CommunityScreen()
+           BottomNavItem.Calendar -> CalendarScreen()
             BottomNavItem.Map -> {
                 MapScreen(
                     sectorsState = sectorsState     // 👈 echte Daten von VM

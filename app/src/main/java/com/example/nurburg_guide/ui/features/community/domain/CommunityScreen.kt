@@ -1,4 +1,4 @@
-package com.example.nurburg_guide.ui.features.community
+/*package com.example.nurburg_guide.ui.features.community
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -577,3 +577,4 @@ private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier = composed
         onClick = onClick
     )
 }
+*/
