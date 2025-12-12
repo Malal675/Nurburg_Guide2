@@ -152,7 +152,7 @@ fun TrackStatusScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // 🔴 Button für Rot melden / Rot aufheben
+        // 🔴 Button für Rot melden / Rot aufheben 1
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
