@@ -39,9 +39,11 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.MapType
 
 // Google Maps Compose
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties // ✅ NEU
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
@@ -153,6 +155,7 @@ fun MapScreen(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
+            properties = MapProperties(mapType = MapType.SATELLITE), // ✅ SATELLIT
             uiSettings = MapUiSettings(
                 myLocationButtonEnabled = false
             )

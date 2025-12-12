@@ -12,6 +12,8 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 
+import com.google.maps.android.compose.MapProperties
+
 @Composable
 fun MiniNordschleifeStatusCard(
     sectorsState: List<SectorState>,
