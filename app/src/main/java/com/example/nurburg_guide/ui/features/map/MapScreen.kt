@@ -56,6 +56,11 @@ import com.example.nurburg_guide.ui.features.map.data.AllLocations
 import com.example.nurburg_guide.ui.features.map.model.GuideLocation
 import com.example.nurburg_guide.ui.features.map.model.LocationCategory
 
+// ✅ Zuschauerspot BottomSheet
+import com.example.nurburg_guide.ui.features.map.spectator.SpectatorSpotBottomSheet
+import com.example.nurburg_guide.ui.features.map.spectator.SpectatorSpotMeta
+import com.example.nurburg_guide.ui.features.map.spectator.SpectatorSpotMetaStore
+
 // Coroutines
 import kotlinx.coroutines.launch
 
@@ -82,10 +87,24 @@ fun MapScreen(
     var selectedLocation by remember { mutableStateOf<GuideLocation?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
+    // ✅ Zuschauerspot: ausgewähltes Meta (öffnet BottomSheet)
+    var selectedSpectatorMeta by remember { mutableStateOf<SpectatorSpotMeta?>(null) }
+
+    // Helper: versucht Sheet zu öffnen, gibt true zurück wenn gefunden
+    fun tryOpenSpectatorSheet(spotName: String): Boolean {
+        val meta = SpectatorSpotMetaStore.metaForSpotName(spotName)
+        return if (meta != null) {
+            selectedSpectatorMeta = meta
+            true
+        } else {
+            false
+        }
+    }
+
     // ---------- FILTER-STATE ----------
     var filterPanelOpen by remember { mutableStateOf(false) }
 
-// 👉 Start: keine Kategorie ausgewählt = alle Marker ausgeblendet
+    // 👉 Start: keine Kategorie ausgewählt = alle Marker ausgeblendet
     var selectedCategories by remember {
         mutableStateOf<Set<LocationCategory>>(emptySet())
     }
@@ -149,6 +168,14 @@ fun MapScreen(
                     ),
                     title = location.name,
                     onClick = {
+                        // ✅ Nur Zuschauerplätze öffnen das Sheet
+                        if (location.category == LocationCategory.ZUSCHAUERSPOT) {
+                            // Wenn Meta existiert -> Sheet öffnen und Click konsumieren
+                            val opened = tryOpenSpectatorSheet(location.name)
+                            if (opened) return@Marker true
+                            // Wenn kein Meta gefunden -> fallback: normal auswählen
+                        }
+
                         selectedLocation = location
                         false
                     }
@@ -274,6 +301,16 @@ fun MapScreen(
                     contentDescription = "Zu mir zentrieren"
                 )
             }
+        }
+
+        // ✅ Zuschauerspot BottomSheet (liegt über allem)
+        selectedSpectatorMeta?.let { meta ->
+            SpectatorSpotBottomSheet(
+                meta = meta,
+                suggestedParkingName = meta.suggestedParkingName,
+                onNavigateToParking = null,
+                onDismiss = { selectedSpectatorMeta = null }
+            )
         }
 
         // TODO: selectedLocation-Card später
