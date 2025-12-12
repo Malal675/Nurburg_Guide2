@@ -131,6 +131,36 @@ fun TrackStatusScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // ✅ MINI-NORDSCHLEIFE-FENSTER (neu)
+        MiniNordschleifeStatusCard(
+            sectorsState = sectorStates,
+            onReportClick = {
+                // wichtig: kein Permission-/Location-Bypass
+                if (hasLocationPermission && canReportFromLocation) {
+                    showRedDialog = true
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Kleine Hinweiszeile direkt unter der Mini-Map (damit "Melden" nicht verwirrt)
+        if (!hasLocationPermission) {
+            Text(
+                text = "Standort nötig für Meldungen.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        } else if (!canReportFromLocation) {
+            Text(
+                text = "Nur vor Ort meldbar.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         // 🔴 Banner, wenn Strecke auf Rot steht
         if (state.isTrackRed) {
             Card(
@@ -205,8 +235,7 @@ fun TrackStatusScreen(
                         onReportYellow = { viewModel.reportYellow(sectorState.id) },
                         currentTimeMillis = now,
                         isTrackRed = state.isTrackRed
-                        )
-
+                    )
                 }
             }
         }
@@ -392,7 +421,6 @@ private fun TrackSectionCard(
             } else {
                 // Track ist rot -> rechts nichts anzeigen (Optional: Spacer für Layout-Stabilität)
                 Spacer(modifier = Modifier.width(80.dp))
-
             }
         }
     }

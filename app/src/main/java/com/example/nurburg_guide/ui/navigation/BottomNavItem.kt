@@ -33,10 +33,10 @@ enum class BottomNavItem(
         icon = Icons.Filled.Search
     ),
 
-    Calendar(
-       titleRes = R.string.nav_calendar,
-       icon = Icons.Filled.CalendarToday
-    ),
+   // Calendar(
+    //   titleRes = R.string.nav_calendar,
+       //icon = Icons.Filled.CalendarToday
+   // ),
 
     // rechts in der BottomBar
    // Community(

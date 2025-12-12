@@ -33,7 +33,7 @@ fun MainNavHost(
                 viewModel = trackStatusViewModel   // 👈 dasselbe VM!
             )
            // BottomNavItem.Community -> CommunityScreen()
-           BottomNavItem.Calendar -> CalendarScreen()
+           //BottomNavItem.Calendar -> CalendarScreen()
             BottomNavItem.Map -> {
                 MapScreen(
                     sectorsState = sectorsState     // 👈 echte Daten von VM
