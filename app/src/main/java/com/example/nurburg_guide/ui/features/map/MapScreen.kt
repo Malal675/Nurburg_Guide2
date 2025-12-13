@@ -155,7 +155,7 @@ fun MapScreen(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(mapType = MapType.SATELLITE), // ✅ SATELLIT
+            properties = MapProperties(mapType = MapType.NORMAL), // ✅ SATELLIT
             uiSettings = MapUiSettings(
                 myLocationButtonEnabled = false
             )

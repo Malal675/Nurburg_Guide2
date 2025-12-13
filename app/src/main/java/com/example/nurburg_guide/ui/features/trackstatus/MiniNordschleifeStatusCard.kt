@@ -10,9 +10,11 @@ import com.example.nurburg_guide.data.trackstatus.SectorState
 import com.example.nurburg_guide.ui.features.map.TrackSectorsOverlay
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.*
-
+import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapType
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 fun MiniNordschleifeStatusCard(
@@ -40,6 +42,7 @@ fun MiniNordschleifeStatusCard(
                     .fillMaxWidth()
                     .height(240.dp),
                 cameraPositionState = cameraPositionState,
+                properties = MapProperties(mapType = MapType.SATELLITE), // ✅ TrackStatus = Satellite
                 uiSettings = MapUiSettings(
                     zoomControlsEnabled = false,
                     compassEnabled = false,
