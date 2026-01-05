@@ -4,15 +4,19 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,10 +31,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -54,6 +60,47 @@ private const val SAFETY_RULES_URL =
 private const val SOS_LINE_NUMBER = "08000302112"
 private const val SOS_LINE_DISPLAY = "0800 0302 112"
 
+// ====== UI Helpers (Outline + Banner-Style) ======
+
+private val BlockShape = RoundedCornerShape(18.dp)
+
+@Composable
+private fun OutlinedBlock(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        modifier = modifier
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = BlockShape,
+            ),
+        shape = BlockShape,
+        tonalElevation = 4.dp,
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun PromoBadge(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(AccentGreen.copy(alpha = 0.18f))
+            .border(1.dp, AccentGreen.copy(alpha = 0.55f), RoundedCornerShape(999.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = AccentGreen,
+        )
+    }
+}
+
 /**
  * Explore / Home Screen:
  *  - RaceTaxi-Banner
@@ -75,33 +122,40 @@ fun HomeScreen(
             .fillMaxSize()
             .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 16.dp)
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        // ✅ Banner: mehr “Hero”-Feeling + Badge + Outline
         NlsPromoBanner(
             modifier = Modifier.fillMaxWidth(),
             onClick = { showRaceTaxiDialog = true },
         )
 
+        // ✅ Wetter: eigene Hintergrundfarbe + Outline + mehr Hierarchie
         WeatherHeaderCard(
             uiState = weatherState,
             onRefresh = { weatherViewModel.refresh() },
         )
 
-        // ✅ “neue” Guide-Card (nur: 🚦 🟡 🔴 🧰 ⛽ 💡)
+        // ✅ Guide: jetzt ebenfalls umrandet (über OutlinedBlock)
         FirstTimerInfoCard(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        // ✅ SOS direkt darunter (mit Disclaimer + click-to-dial)
+        // ✅ SOS: umrandet
         EmergencyInfoCard(
             modifier = Modifier.fillMaxWidth(),
         )
 
+        // ✅ News: jede Card ist bereits Surface – wir geben der Section einen Rahmen
         if (newsItems.isNotEmpty()) {
-            NewsSection(
-                newsItems = newsItems,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            OutlinedBlock(modifier = Modifier.fillMaxWidth()) {
+                NewsSection(
+                    newsItems = newsItems,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                )
+            }
         }
     }
 
@@ -121,22 +175,58 @@ fun NlsPromoBanner(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
+    // ✅ Stärkerer Rahmen + etwas höher + Badge
     Surface(
-        modifier = modifier.clickable(
-            interactionSource = interactionSource,
-            indication = null,
-        ) { onClick() },
-        shape = MaterialTheme.shapes.large,
-        tonalElevation = 8.dp,
+        modifier = modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+            ) { onClick() }
+            .border(
+                width = 2.dp,
+                color = AccentGreen.copy(alpha = 0.65f),
+                shape = BlockShape,
+            ),
+        shape = BlockShape,
+        tonalElevation = 10.dp,
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.home_nls_banner),
-            contentDescription = "RaceTaxi – Werde Teil der NLS",
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 140.dp),
-            contentScale = ContentScale.Crop,
-        )
+        Box {
+            Image(
+                painter = painterResource(id = R.drawable.home_nls_banner),
+                contentDescription = "RaceTaxi – Werde Teil der NLS",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 170.dp),
+                contentScale = ContentScale.Crop,
+            )
+
+            // Badge oben links
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(12.dp),
+            ) {
+                PromoBadge("Anzeige · RaceTaxi")
+            }
+
+            // kleine “Callout”-Zeile unten
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(12.dp),
+            ) {
+                Text(
+                    text = "Tippen für Infos & Buchung",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.78f))
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                )
+            }
+        }
     }
 }
 
@@ -188,15 +278,15 @@ fun WeatherHeaderCard(
     uiState: WeatherUiState,
     onRefresh: () -> Unit,
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        tonalElevation = 8.dp,
-        shape = MaterialTheme.shapes.large,
-    ) {
+    // ✅ auffälligere “Wetter”-Fläche
+    val weatherBg = AccentGreen.copy(alpha = 0.10f)
+
+    OutlinedBlock(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 10.dp),
+                .background(weatherBg)
+                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(
@@ -204,12 +294,22 @@ fun WeatherHeaderCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "Wetter am Ring",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = AccentGreen,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "Wetter am Ring",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = AccentGreen,
+                    )
+                    val lastUpdatedText = uiState.lastUpdated?.let { "Zuletzt aktualisiert: $it" }
+                        ?: "Noch nicht aktualisiert"
+
+                    Text(
+                        text = lastUpdatedText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
 
                 IconButton(
                     onClick = onRefresh,
@@ -227,14 +327,6 @@ fun WeatherHeaderCard(
                 }
             }
 
-            val lastUpdatedText = uiState.lastUpdated?.let { "Zuletzt aktualisiert: $it" }
-                ?: "Noch nicht aktualisiert"
-
-            Text(
-                text = lastUpdatedText,
-                style = MaterialTheme.typography.labelSmall,
-            )
-
             when {
                 uiState.isLoading -> Text("Lädt Wetterdaten …", style = MaterialTheme.typography.bodyMedium)
 
@@ -250,16 +342,20 @@ fun WeatherHeaderCard(
                     val rainText = uiState.precipitationMm?.let { String.format("%.1f mm", it) } ?: "–"
                     val windText = uiState.windSpeedKmh?.let { String.format("%.1f km/h", it) } ?: "–"
 
+                    // ✅ “Hauptwert” größer + Details klar getrennt
                     Text(
                         text = desc.short,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(desc.detail, style = MaterialTheme.typography.bodySmall)
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
-                        text = "Temperatur aktuell: $tempText",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
+                        text = "Temperatur: $tempText",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
                     )
                     Text(
                         text = "Regen: $rainText · Wind: $windText",
@@ -286,11 +382,7 @@ fun FirstTimerInfoCard(
 ) {
     val context = LocalContext.current
 
-    Surface(
-        modifier = modifier,
-        tonalElevation = 8.dp,
-        shape = MaterialTheme.shapes.large,
-    ) {
+    OutlinedBlock(modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -349,24 +441,34 @@ fun FirstTimerInfoCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // ✅ FIX: kein Umbruch mitten im Wort + sauber zentriert + etwas weniger Padding
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 OutlinedButton(
                     onClick = { openGeoQuery(context, "Tankstelle Nürburgring Döttinger Höhe") },
-                    modifier = Modifier.weight(1f),
-                ) { Text("⛽ Tankstellen") }
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 44.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp),
+                ) { ButtonLabel("⛽ Tankstellen") }
 
                 Button(
                     onClick = { openUrl(context, TICKETS_URL) },
-                    modifier = Modifier.weight(1f),
-                ) { Text("Ticketkauf") }
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 44.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp),
+                ) { ButtonLabel("Ticketkauf") }
 
                 OutlinedButton(
                     onClick = { openGeoQuery(context, "Nürburgring Touristenfahrten Zufahrt") },
-                    modifier = Modifier.weight(1f),
-                ) { Text("Zufahrt") }
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 44.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp),
+                ) { ButtonLabel("Zufahrt") }
             }
         }
     }
@@ -381,11 +483,7 @@ fun EmergencyInfoCard(
 ) {
     val context = LocalContext.current
 
-    Surface(
-        modifier = modifier,
-        tonalElevation = 8.dp,
-        shape = MaterialTheme.shapes.large,
-    ) {
+    OutlinedBlock(modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -429,16 +527,12 @@ fun EmergencyInfoCard(
                 Button(
                     onClick = { dialNumber(context, SOS_LINE_NUMBER) },
                     modifier = Modifier.weight(1f),
-                ) {
-                    Text("📞 SOS-Line $SOS_LINE_DISPLAY")
-                }
+                ) { Text("📞 SOS-Line $SOS_LINE_DISPLAY") }
 
                 OutlinedButton(
                     onClick = { dialNumber(context, "112") },
                     modifier = Modifier.weight(1f),
-                ) {
-                    Text("112 Notruf")
-                }
+                ) { Text("112 Notruf") }
             }
 
             TextButton(
@@ -455,6 +549,22 @@ private fun Bullet(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,
+    )
+}
+
+/**
+ * ✅ Helper: verhindert Wort-Umbruch mitten im Wort in Buttons (Tankstellen/Ticketkauf etc.)
+ */
+@Composable
+private fun ButtonLabel(text: String) {
+    Text(
+        text = text,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Clip,
+        textAlign = TextAlign.Center,
+        style = MaterialTheme.typography.labelMedium,
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 
@@ -545,9 +655,14 @@ fun NewsCard(
     }
 
     Surface(
-        modifier = clickableModifier,
-        tonalElevation = 6.dp,
-        shape = MaterialTheme.shapes.large,
+        modifier = clickableModifier
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = BlockShape,
+            ),
+        tonalElevation = 4.dp,
+        shape = BlockShape,
     ) {
         Column {
             if (item.imageUrl != null) {
