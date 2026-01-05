@@ -481,7 +481,7 @@ fun EmergencyInfoCard(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = "📞 SOS / Notfall (Touristenfahrten)",
+                text = "SOS / Notfall (Touristenfahrten)",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = AccentGreen,

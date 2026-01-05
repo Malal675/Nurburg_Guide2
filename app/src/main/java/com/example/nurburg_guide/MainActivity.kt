@@ -1,6 +1,8 @@
 package com.example.nurburg_guide
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,6 +46,9 @@ import com.example.nurburg_guide.ui.navigation.BottomNavBar
 import com.example.nurburg_guide.ui.navigation.BottomNavItem
 import com.example.nurburg_guide.ui.navigation.MainNavHost
 import com.example.nurburg_guide.ui.theme.NurburgGuideTheme
+
+private const val RACETAXI_M3_URL =
+    "https://www.getspeed-racetaxi.de/bmw-m3-competition-touring?_gl=1*bhykaq*_up*MQ..*_gs*MQ..&gclid=CjwKCAiA3-3KBhBiEiwA2x7FdIFwdj2dYuPR6lN_P7oCaAPIqSxxoB-vNB_gg4OXlAHwoqmAQSiiLRoC_wQQAvD_BwE&gbraid=0AAAAAqcBHeYBmH0m-qldOVZxvC6Tchnkk"
 
 class MainActivity : ComponentActivity() {
 
@@ -186,6 +191,8 @@ private fun LicenseDisclaimerDialog(
 private fun RaceTaxiPromoDialog(
     onClose: () -> Unit,
 ) {
+    val context = LocalContext.current
+
     Dialog(onDismissRequest = onClose) {
         Card(
             shape = MaterialTheme.shapes.large,
@@ -235,7 +242,7 @@ private fun RaceTaxiPromoDialog(
 
                     Button(
                         onClick = {
-                            // TODO: später Link zur Buchungs-Seite öffnen
+                            openUrl(context, RACETAXI_M3_URL)
                             onClose()
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -246,4 +253,9 @@ private fun RaceTaxiPromoDialog(
             }
         }
     }
+}
+
+private fun openUrl(context: Context, url: String) {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    context.startActivity(intent)
 }
