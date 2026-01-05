@@ -447,7 +447,7 @@ fun FirstTimerInfoCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 OutlinedButton(
-                    onClick = { openGeoQuery(context, "Tankstelle Nürburgring Döttinger Höhe") },
+                    onClick = { openGeoQuery(context, "Tankstelle Nürburgring") },
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 44.dp),
@@ -460,7 +460,7 @@ fun FirstTimerInfoCard(
                         .weight(1f)
                         .heightIn(min = 44.dp),
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp),
-                ) { ButtonLabel("Ticketkauf") }
+                ) { ButtonLabel("Ticketverkauf") }
 
                 OutlinedButton(
                     onClick = { openGeoQuery(context, "Nürburgring Touristenfahrten Zufahrt") },
