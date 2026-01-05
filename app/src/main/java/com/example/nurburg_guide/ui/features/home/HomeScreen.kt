@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -197,7 +198,7 @@ fun RaceTaxiInfoDialog(
 }
 
 /**
- * Wetterkarte (ohne Emojis, damit nur deine ausgewählten Emojis vorkommen).
+ * Wetterkarte (jetzt wieder MIT Emoji anhand weatherCode).
  */
 @Composable
 fun WeatherHeaderCard(
@@ -266,12 +267,14 @@ fun WeatherHeaderCard(
 
                 else -> {
                     val desc = interpretWeatherCode(uiState.weatherCode)
+                    val emoji = weatherEmoji(uiState.weatherCode)
+
                     val tempText = uiState.temperatureC?.let { "${it.toInt()}°C" } ?: "–°C"
                     val rainText = uiState.precipitationMm?.let { String.format("%.1f mm", it) } ?: "–"
                     val windText = uiState.windSpeedKmh?.let { String.format("%.1f km/h", it) } ?: "–"
 
                     Text(
-                        text = desc.short,
+                        text = "$emoji ${desc.short}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -297,10 +300,8 @@ fun WeatherHeaderCard(
 }
 
 /**
- * ✅ Guide-Card (nur diese Emojis):
- * 🚦 🟡 🔴 🧰 ⛽ 💡
- *
- * ✅ Ein/Ausklappbar per Pfeil
+ * ✅ Guide-Card (ein/ausklappbar per Pfeil)
+ * ✅ Buttons unten: jetzt 1-zeilig + sauber (kein ugly wrap)
  */
 @Composable
 fun FirstTimerInfoCard(
@@ -403,24 +404,53 @@ fun FirstTimerInfoCard(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    val btnPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         OutlinedButton(
-                            onClick = { openGeoQuery(context, "Tankstelle Nürburgring Döttinger Höhe") },
+                            onClick = { openGeoQuery(context, "Tankstelle Nürburgring") },
                             modifier = Modifier.weight(1f),
-                        ) { Text("⛽ Tankstellen") }
+                            contentPadding = btnPadding,
+                        ) {
+                            Text(
+                                text = "Tankstellen",
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
 
                         Button(
                             onClick = { openUrl(context, TICKETS_URL) },
                             modifier = Modifier.weight(1f),
-                        ) { Text("Ticketkauf") }
+                            contentPadding = btnPadding,
+                        ) {
+                            Text(
+                                text = "Ticketverkauf",
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
 
                         OutlinedButton(
                             onClick = { openGeoQuery(context, "Nürburgring Touristenfahrten Zufahrt") },
                             modifier = Modifier.weight(1f),
-                        ) { Text("Zufahrt") }
+                            contentPadding = btnPadding,
+                        ) {
+                            Text(
+                                text = "Zufahrt",
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
                     }
                 }
             }
@@ -655,5 +685,23 @@ fun NewsCard(
                 )
             }
         }
+    }
+}
+
+/**
+ * Wettercode -> Emoji (wie in deinem Screenshot).
+ */
+private fun weatherEmoji(code: Int?): String {
+    return when (code) {
+        0 -> "☀️"              // klar
+        1, 2 -> "🌤️"           // überwiegend klar / teils bewölkt
+        3 -> "☁️"              // bedeckt
+        45, 48 -> "🌫️"         // Nebel
+        51, 53, 55, 56, 57 -> "🌦️"  // Niesel/gefrierender Niesel (leicht)
+        61, 63, 65, 66, 67 -> "🌧️"  // Regen/gefrierender Regen
+        71, 73, 75, 77, 85, 86 -> "❄️" // Schnee
+        80, 81, 82 -> "🌦️"     // Regenschauer
+        95, 96, 99 -> "⛈️"     // Gewitter
+        else -> "⛅"            // fallback: wechselhaft
     }
 }
