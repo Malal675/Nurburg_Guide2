@@ -58,10 +58,15 @@ import com.example.nurburg_guide.ui.features.map.data.AllLocations
 import com.example.nurburg_guide.ui.features.map.model.GuideLocation
 import com.example.nurburg_guide.ui.features.map.model.LocationCategory
 
-// ✅ Zuschauerspot BottomSheet
+// Zuschauerspot BottomSheet
 import com.example.nurburg_guide.ui.features.map.spectator.SpectatorSpotBottomSheet
 import com.example.nurburg_guide.ui.features.map.spectator.SpectatorSpotMeta
 import com.example.nurburg_guide.ui.features.map.spectator.SpectatorSpotMetaStore
+
+//Maps-Pointer
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 
 // Coroutines
 import kotlinx.coroutines.launch
@@ -72,6 +77,10 @@ fun MapScreen(
     sectorsState: List<SectorState>          // 👈 Sektorzustände kommen von außen
 ) {
     val context = LocalContext.current
+    val hasLocationPermission = remember {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
     val fusedLocationClient = remember {
         LocationServices.getFusedLocationProviderClient(context)
     }
@@ -155,13 +164,17 @@ fun MapScreen(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(mapType = MapType.NORMAL), // ✅ SATELLIT
-            uiSettings = MapUiSettings(
+            properties = MapProperties(
+                mapType = MapType.NORMAL,
+                isMyLocationEnabled = hasLocationPermission
+            ),            uiSettings = MapUiSettings(
                 myLocationButtonEnabled = false
             )
         ) {
             // ✅ Sektoren-Overlay (alle Polylines + Farben)
             TrackSectorsOverlay(sectorsState = sectorsState)
+
+
 
             // Marker für Locations
             locationsToShow.forEach { location ->
