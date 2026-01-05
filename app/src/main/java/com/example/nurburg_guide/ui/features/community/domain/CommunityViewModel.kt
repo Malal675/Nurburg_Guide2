@@ -176,7 +176,7 @@ class CommunityViewModel(
             type = type,
             category = category
         )
-
+//.
         val updatedAll = uiState.allPosts + newPost
         val updatedFiltered = applyFilters(
             posts = updatedAll,
