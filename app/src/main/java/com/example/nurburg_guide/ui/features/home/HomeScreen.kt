@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -124,29 +123,24 @@ fun HomeScreen(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // ✅ Banner: mehr “Hero”-Feeling + Badge + Outline
         NlsPromoBanner(
             modifier = Modifier.fillMaxWidth(),
             onClick = { showRaceTaxiDialog = true },
         )
 
-        // ✅ Wetter: eigene Hintergrundfarbe + Outline + mehr Hierarchie
         WeatherHeaderCard(
             uiState = weatherState,
             onRefresh = { weatherViewModel.refresh() },
         )
 
-        // ✅ Guide: jetzt ebenfalls umrandet (über OutlinedBlock)
         FirstTimerInfoCard(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        // ✅ SOS: umrandet
         EmergencyInfoCard(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        // ✅ News: jede Card ist bereits Surface – wir geben der Section einen Rahmen
         if (newsItems.isNotEmpty()) {
             OutlinedBlock(modifier = Modifier.fillMaxWidth()) {
                 NewsSection(
@@ -175,7 +169,6 @@ fun NlsPromoBanner(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
-    // ✅ Stärkerer Rahmen + etwas höher + Badge
     Surface(
         modifier = modifier
             .clickable(
@@ -200,7 +193,6 @@ fun NlsPromoBanner(
                 contentScale = ContentScale.Crop,
             )
 
-            // Badge oben links
             Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)
@@ -209,7 +201,6 @@ fun NlsPromoBanner(
                 PromoBadge("Anzeige · RaceTaxi")
             }
 
-            // kleine “Callout”-Zeile unten
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -271,14 +262,13 @@ fun RaceTaxiInfoDialog(
 }
 
 /**
- * Wetterkarte (ohne Emojis, damit nur deine ausgewählten Emojis vorkommen).
+ * Wetterkarte (jetzt mit kleinem Emoji hinter der Kurzbeschreibung).
  */
 @Composable
 fun WeatherHeaderCard(
     uiState: WeatherUiState,
     onRefresh: () -> Unit,
 ) {
-    // ✅ auffälligere “Wetter”-Fläche
     val weatherBg = AccentGreen.copy(alpha = 0.10f)
 
     OutlinedBlock(modifier = Modifier.fillMaxWidth()) {
@@ -342,9 +332,12 @@ fun WeatherHeaderCard(
                     val rainText = uiState.precipitationMm?.let { String.format("%.1f mm", it) } ?: "–"
                     val windText = uiState.windSpeedKmh?.let { String.format("%.1f km/h", it) } ?: "–"
 
-                    // ✅ “Hauptwert” größer + Details klar getrennt
+                    // ✅ NEU: kleines Emoji passend zum Wettercode
+                    val emoji = weatherEmoji(uiState.weatherCode)
+                    val headline = if (emoji.isNotEmpty()) "${desc.short} $emoji" else desc.short
+
                     Text(
-                        text = desc.short,
+                        text = headline,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -441,13 +434,12 @@ fun FirstTimerInfoCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ✅ FIX: kein Umbruch mitten im Wort + sauber zentriert + etwas weniger Padding
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 OutlinedButton(
-                    onClick = { openGeoQuery(context, "Tankstelle Nürburgring") },
+                    onClick = { openGeoQuery(context, "Tankstelle Nürburgring Döttinger Höhe") },
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 44.dp),
@@ -460,7 +452,7 @@ fun FirstTimerInfoCard(
                         .weight(1f)
                         .heightIn(min = 44.dp),
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp),
-                ) { ButtonLabel("Ticketverkauf") }
+                ) { ButtonLabel("Ticketkauf") }
 
                 OutlinedButton(
                     onClick = { openGeoQuery(context, "Nürburgring Touristenfahrten Zufahrt") },
@@ -566,6 +558,26 @@ private fun ButtonLabel(text: String) {
         style = MaterialTheme.typography.labelMedium,
         modifier = Modifier.fillMaxWidth(),
     )
+}
+
+/**
+ * ✅ NEU: kleines Wetter-Emoji passend zum Open-Meteo WeatherCode
+ */
+private fun weatherEmoji(code: Int?): String {
+    if (code == null) return ""
+    return when (code) {
+        0 -> "☀️"                      // klar
+        1, 2 -> "🌤️"                   // überwiegend klar / teils bewölkt
+        3 -> "☁️"                      // bedeckt
+        45, 48 -> "🌫️"                 // Nebel
+        51, 53, 55, 56, 57 -> "🌦️"      // Niesel / gefrierender Niesel
+        61, 63, 65, 66, 67 -> "🌧️"      // Regen / gefrierender Regen
+        71, 73, 75, 77 -> "❄️"          // Schnee
+        80, 81, 82 -> "🌧️"              // Regenschauer
+        85, 86 -> "❄️"                  // Schneeschauer
+        95, 96, 99 -> "⛈️"              // Gewitter (mit/ohne Hagel)
+        else -> "☁️"
+    }
 }
 
 private fun openGeoQuery(
