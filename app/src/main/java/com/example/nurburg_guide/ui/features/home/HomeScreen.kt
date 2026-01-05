@@ -3,13 +3,22 @@ package com.example.nurburg_guide.ui.features.home
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -21,9 +30,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +62,10 @@ private const val SAFETY_RULES_URL =
 // ✅ Nordschleifen SOS-Line (Dialer)
 private const val SOS_LINE_NUMBER = "08000302112"
 private const val SOS_LINE_DISPLAY = "0800 0302 112"
+
+private val HomeCardShape @Composable get() = MaterialTheme.shapes.large
+private val HomeCardBorderColor @Composable get() = MaterialTheme.colorScheme.outline
+private val HomeCardBorderWidth = 1.dp
 
 /**
  * Explore / Home Screen:
@@ -87,7 +100,7 @@ fun HomeScreen(
             onRefresh = { weatherViewModel.refresh() },
         )
 
-        // ✅ “neue” Guide-Card (nur: 🚦 🟡 🔴 🧰 ⛽ 💡)
+        // ✅ Guide-Card (ein/ausklappbar)
         FirstTimerInfoCard(
             modifier = Modifier.fillMaxWidth(),
         )
@@ -120,13 +133,16 @@ fun NlsPromoBanner(
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val shape = HomeCardShape
 
     Surface(
-        modifier = modifier.clickable(
-            interactionSource = interactionSource,
-            indication = null,
-        ) { onClick() },
-        shape = MaterialTheme.shapes.large,
+        modifier = modifier
+            .border(HomeCardBorderWidth, HomeCardBorderColor, shape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+            ) { onClick() },
+        shape = shape,
         tonalElevation = 8.dp,
     ) {
         Image(
@@ -188,10 +204,14 @@ fun WeatherHeaderCard(
     uiState: WeatherUiState,
     onRefresh: () -> Unit,
 ) {
+    val shape = HomeCardShape
+
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(HomeCardBorderWidth, HomeCardBorderColor, shape),
         tonalElevation = 8.dp,
-        shape = MaterialTheme.shapes.large,
+        shape = shape,
     ) {
         Column(
             modifier = Modifier
@@ -206,7 +226,7 @@ fun WeatherHeaderCard(
             ) {
                 Text(
                     text = "Wetter am Ring",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = AccentGreen,
                 )
@@ -279,17 +299,22 @@ fun WeatherHeaderCard(
 /**
  * ✅ Guide-Card (nur diese Emojis):
  * 🚦 🟡 🔴 🧰 ⛽ 💡
+ *
+ * ✅ Ein/Ausklappbar per Pfeil
  */
 @Composable
 fun FirstTimerInfoCard(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    var expanded by remember { mutableStateOf(false) }
+    val shape = HomeCardShape
 
     Surface(
-        modifier = modifier,
+        modifier = modifier
+            .border(HomeCardBorderWidth, HomeCardBorderColor, shape),
         tonalElevation = 8.dp,
-        shape = MaterialTheme.shapes.large,
+        shape = shape,
     ) {
         Column(
             modifier = Modifier
@@ -297,76 +322,107 @@ fun FirstTimerInfoCard(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(
-                text = "Erstfahrer Guide",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = AccentGreen,
-            )
-
-            Text(
-                text = "Kurz & praxisnah (ohne Gewähr). Vor Ort gelten Schilder, Flaggen und Anweisungen.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            Text(
-                text = "🚦 Regeln & Verhalten",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Bullet("• Rechts fahren, Spiegel nutzen, schnellere links vorbei lassen.")
-            Bullet("• StVO gilt – Rechtsüberholen ist verboten.")
-            Bullet("🟡 Gelb: Tempo deutlich runter, nicht überholen, jederzeit Gefahr/Trümmer/Stau möglich.")
-            Bullet("🔴 Rot: Strecke gesperrt bis wieder geöffnet – keine Fahrten möglich.")
-            Bullet("• Foto-/Film-/Videoaufnahmen während Touristenfahrten sind grundsätzlich verboten.")
-            Bullet("• Baustellen/Tempolimits strikt einhalten – grundsätzlich angepasste Geschwindigkeit.")
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "🧰 Auto Setup",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Bullet("• Bei Öl/Kühlwasser/Kraftstoff-Verlust: nicht weiterfahren.")
-            Bullet("• Verschmutzung/Leck sofort der Streckensicherung melden.")
-            Bullet("• Fahrerlaubnis + Fahrzeugschein mitführen.")
-            Bullet("• Innenraum: alles Lose raus (kein Plunder im Auto).")
-            Bullet("⛽ Tank: nicht auf Reserve starten – lieber früh tanken als spät suchen.")
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Quick Tipps",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Bullet("• Erste Runde ruhig: Reifen & Bremsen anwärmen, Rhythmus finden.")
-            Bullet("💡 Quick Tipp: Lieber wenige saubere Runden als „Bestzeit“ – weniger Stress & Risiko.")
-
-            Spacer(modifier = Modifier.height(8.dp))
+            // ✅ FIX: clickable Overload + indication = null (verhindert den Crash)
+            val headerInteraction = remember { MutableInteractionSource() }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interactionSource = headerInteraction,
+                        indication = null,
+                    ) { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                OutlinedButton(
-                    onClick = { openGeoQuery(context, "Tankstelle Nürburgring Döttinger Höhe") },
-                    modifier = Modifier.weight(1f),
-                ) { Text("⛽ Tankstellen") }
+                Text(
+                    text = "Erstfahrer Guide",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentGreen,
+                )
 
-                Button(
-                    onClick = { openUrl(context, TICKETS_URL) },
-                    modifier = Modifier.weight(1f),
-                ) { Text("Ticketkauf") }
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = if (expanded) "Zuklappen" else "Aufklappen",
+                    tint = AccentGreen,
+                )
+            }
 
-                OutlinedButton(
-                    onClick = { openGeoQuery(context, "Nürburgring Touristenfahrten Zufahrt") },
-                    modifier = Modifier.weight(1f),
-                ) { Text("Zufahrt") }
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(animationSpec = tween(250)) + fadeIn(animationSpec = tween(250)),
+                exit = shrinkVertically(animationSpec = tween(200)) + fadeOut(animationSpec = tween(200)),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = "Kurz & praxisnah (ohne Gewähr). Vor Ort gelten Schilder, Flaggen und Anweisungen.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = "🚦 Regeln & Verhalten",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Bullet("• Rechts fahren, Spiegel nutzen, schnellere links vorbei lassen.")
+                    Bullet("• StVO gilt – Rechtsüberholen ist verboten.")
+                    Bullet("🟡 Gelb: Tempo deutlich runter, nicht überholen, jederzeit Gefahr/Trümmer/Stau möglich.")
+                    Bullet("🔴 Rot: Strecke gesperrt bis wieder geöffnet – keine Fahrten möglich.")
+                    Bullet("• Foto-/Film-/Videoaufnahmen während Touristenfahrten sind grundsätzlich verboten.")
+                    Bullet("• Baustellen/Tempolimits strikt einhalten – grundsätzlich angepasste Geschwindigkeit.")
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "🧰 Auto Setup",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Bullet("• Bei Öl/Kühlwasser/Kraftstoff-Verlust: nicht weiterfahren.")
+                    Bullet("• Verschmutzung/Leck sofort der Streckensicherung melden.")
+                    Bullet("• Fahrerlaubnis + Fahrzeugschein mitführen.")
+                    Bullet("• Innenraum: alles Lose raus (kein Plunder im Auto).")
+                    Bullet("⛽ Tank: nicht auf Reserve starten – lieber früh tanken als spät suchen.")
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Quick Tipps",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Bullet("• Erste Runde ruhig: Reifen & Bremsen anwärmen, Rhythmus finden.")
+                    Bullet("💡 Quick Tipp: Lieber wenige saubere Runden als „Bestzeit“ – weniger Stress & Risiko.")
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        OutlinedButton(
+                            onClick = { openGeoQuery(context, "Tankstelle Nürburgring Döttinger Höhe") },
+                            modifier = Modifier.weight(1f),
+                        ) { Text("⛽ Tankstellen") }
+
+                        Button(
+                            onClick = { openUrl(context, TICKETS_URL) },
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Ticketkauf") }
+
+                        OutlinedButton(
+                            onClick = { openGeoQuery(context, "Nürburgring Touristenfahrten Zufahrt") },
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Zufahrt") }
+                    }
+                }
             }
         }
     }
@@ -380,11 +436,13 @@ fun EmergencyInfoCard(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val shape = HomeCardShape
 
     Surface(
-        modifier = modifier,
+        modifier = modifier
+            .border(HomeCardBorderWidth, HomeCardBorderColor, shape),
         tonalElevation = 8.dp,
-        shape = MaterialTheme.shapes.large,
+        shape = shape,
     ) {
         Column(
             modifier = Modifier
@@ -394,7 +452,7 @@ fun EmergencyInfoCard(
         ) {
             Text(
                 text = "📞 SOS / Notfall (Touristenfahrten)",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = AccentGreen,
             )
@@ -529,6 +587,7 @@ fun NewsCard(
 ) {
     val context = LocalContext.current
     val interactionSource = remember { MutableInteractionSource() }
+    val shape = HomeCardShape
 
     val clickableModifier = if (item.articleUrl != null) {
         modifier
@@ -545,9 +604,10 @@ fun NewsCard(
     }
 
     Surface(
-        modifier = clickableModifier,
+        modifier = clickableModifier
+            .border(HomeCardBorderWidth, HomeCardBorderColor, shape),
         tonalElevation = 6.dp,
-        shape = MaterialTheme.shapes.large,
+        shape = shape,
     ) {
         Column {
             if (item.imageUrl != null) {
