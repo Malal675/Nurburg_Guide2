@@ -9,8 +9,8 @@ object QuerungenLocations {
         GuideLocation(
             id = "quer_tiergarten",
             name = "Überquerung Tiergarten",
-            latitude = 50.34534,
-            longitude = 6.96006,
+            latitude = 50.34349,
+            longitude = 6.96012,
             category = LocationCategory.STRECKENQUERUNG,
             url = null
         ),
